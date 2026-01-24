@@ -3,18 +3,20 @@ import httpx
 from pydantic import BaseModel
 
 from ucli.client.resources.sites import Sites
+from ucli.client.resources.networks import Networks
 
 
 class APIClient:
     
     def __init__(
         self,
-        base_url: str,
+        host: str,
         api_key: str,
+        base_path: str = "proxy/network/integration/v1",
         verify_tls: bool = False,
     ):
         
-        self.base_url = base_url.rstrip("/")
+        self.base_url = f"https://{host}/{base_path.lstrip("/")}".rstrip("/")
 
         self._client = httpx.Client(
             base_url=self.base_url,
@@ -36,8 +38,17 @@ class APIClient:
     def sites(self) -> Sites:
         return Sites(self)
     
+    def networks(self, site_id: str) -> Networks:
+        return Networks(client=self, site_id=site_id)
 
 def get_client() -> APIClient:
-    api_key = os.getenv("UNIFI_API_KEY", "sk_demo")
-    base_url = os.getenv("UNIFI_BASE_URL", "https://api.ui.com/v1")
-    return APIClient(api_key=api_key, base_url=base_url)
+
+    host = os.getenv("UNIFI_HOST")
+    api_key = os.getenv("UNIFI_API_KEY")
+    base_path = os.getenv("UNIFI_BASE_PATH")
+    
+    return APIClient(
+        host=host,
+        base_path=base_path,
+        api_key=api_key,
+    )

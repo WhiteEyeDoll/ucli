@@ -1,15 +1,17 @@
 import typer
+import json
+from ucli.client.client import get_client
+
+from ucli.cmd.console import console
 
 app = typer.Typer()
 
-
 @app.command()
-def list(siteId: str):
+def list():
 
+    client = get_client()
 
-@app.command()
-def get(siteId: str,  networkId: str):
+    site_id = client.sites.get_id("Default")
+    networks = client.networks(site_id).list()
 
-
-if __name__ == "__main__":
-    app()
+    console.print(json.dumps(networks))

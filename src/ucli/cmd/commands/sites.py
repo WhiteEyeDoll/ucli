@@ -10,6 +10,7 @@ app = typer.Typer()
 def list():
 
     client = get_client()
-    sites = client.sites.list()
 
-    console.print(sites)
+    data = [site.model_dump_json() for site in client.sites.list()]
+
+    console.print(data)
