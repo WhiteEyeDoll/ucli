@@ -1,0 +1,26 @@
+[project]
+name = "ucli"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "httpx>=0.28.1",
+    "pydantic>=2.12.5",
+    "rich>=14.2.0",
+    "typer>=0.21.1",
+]
+
+[project.scripts]
+ucli = "ucli:cmd.app"
+
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.workspace]
+members = [
+    "cmd",
+    "client",
+    "plaa",
+]
