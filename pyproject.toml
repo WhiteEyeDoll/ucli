@@ -18,9 +18,3 @@ ucli = "ucli:cmd.app"
 requires = ["uv_build"]
 build-backend = "uv_build"
 
-[tool.uv.workspace]
-members = [
-    "cmd",
-    "client",
-    "plaa",
-]
