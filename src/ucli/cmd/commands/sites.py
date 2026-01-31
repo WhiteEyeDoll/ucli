@@ -1,5 +1,6 @@
+import json
 import typer
-from ucli.client.client import get_client
+from ucli.client.factory import get_client
 
 from ucli.cmd.console import console
 
@@ -7,10 +8,12 @@ app = typer.Typer()
 
 
 @app.command()
-def list():
+def list(
+    ctx: typer.Context
+):
 
-    client = get_client()
+    client = get_client(ctx.obj.client)
 
-    data = [site.model_dump_json() for site in client.sites.list()]
+    data = client.sites.list()
 
-    console.print(data)
+    console.print(json.dumps(data))

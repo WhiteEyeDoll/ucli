@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ucli = "ucli:cmd.app"
+ucli = "ucli:main"
 
 [build-system]
 requires = ["uv_build"]

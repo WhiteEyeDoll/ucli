@@ -1,4 +1,3 @@
-from ucli.cmd import cmd
+from ucli.cmd.main import app as main
 
-if __name__ == "__main__":
-    cmd.app()
+__all__ = ["main"]
