@@ -1,10 +1,10 @@
 from ucli.client.client import APIClientV1
-from ucli.client.models.config import ClientOptions
+from ucli.client.models.config import ClientOptionsModel
 
 _client_cache: APIClientV1 | None = None
 
 
-def get_client(options: ClientOptions) -> APIClientV1:
+def get_client(options: ClientOptionsModel) -> APIClientV1:
     global _client_cache
     if _client_cache is not None:
         return _client_cache

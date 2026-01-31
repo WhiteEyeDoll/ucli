@@ -1,20 +1,20 @@
 import typer
 from pydantic import BaseModel
 from typing import Optional, Annotated
-from ucli.client.models.config import ClientOptions
+from ucli.client.models.config import ClientOptionsModel
 from ucli.cmd.commands import sites
 from ucli.cmd.commands import networks
 from ucli.client.factory import get_client
 
 
-class CLIOptions(BaseModel):
+class CLIOptionsModel(BaseModel):
     site_id: Optional[str] = None
     format: str
 
 
-class GlobalOptions(BaseModel):
-    cli: CLIOptions
-    client: ClientOptions
+class GlobalOptionsModel(BaseModel):
+    cli: CLIOptionsModel
+    client: ClientOptionsModel
 
 
 app = typer.Typer()
@@ -46,9 +46,9 @@ def main(
     Global options
     """
 
-    ctx.obj = GlobalOptions(
-        client=ClientOptions(base_url=base_url, api_token=token, tls_verify=verify),
-        cli=CLIOptions(site_id=siteid, format=format),
+    ctx.obj = GlobalOptionsModel(
+        client=ClientOptionsModel(base_url=base_url, api_token=token, tls_verify=verify),
+        cli=CLIOptionsModel(site_id=siteid, format=format),
     )
 
 

@@ -1,6 +1,6 @@
 import httpx
-from ucli.client.resources.sites import Sites
-from ucli.client.resources.networks import Networks
+from ucli.client.resources.site import SitesResource
+from ucli.client.resources.network import NetworksResource
 
 
 class APIClientV1:
@@ -30,5 +30,5 @@ class APIClientV1:
         return response.json()
 
     @property
-    def sites(self) -> Sites:
-        return Sites(self)
+    def sites(self) -> SitesResource:
+        return SitesResource(self)

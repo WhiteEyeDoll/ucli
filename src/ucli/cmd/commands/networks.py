@@ -11,7 +11,7 @@ def list(ctx: typer.Context):
 
     client = get_client(ctx.obj.client)
 
-    global_options: CLIOptions = ctx.obj.cli
+    global_options: CLIOptionsModel = ctx.obj.cli
 
     site = client.sites.get(global_options.site_id)
 
@@ -28,7 +28,7 @@ def get(
 
     client = get_client(ctx.obj.client)
 
-    global_options: CLIOptions = ctx.obj.cli
+    global_options: CLIOptionsModel = ctx.obj.cli
 
     site = client.sites.get(global_options.site_id)
 

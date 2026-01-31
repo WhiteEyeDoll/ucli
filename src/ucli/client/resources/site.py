@@ -1,14 +1,12 @@
-from ucli.client.resources.base import Resource
-from ucli.client.resources.site_resource import SiteResource
-from ucli.client.resources.networks import Networks
-from ucli.client.models.sites import SiteModel
+from ucli.client.resources.network import NetworksResource
+from ucli.client.models.site import SiteModel
 
 
-class Site:
+class SiteResource:
     def __init__(self, model: SiteModel, client: "APIClientV1"):
         self.model = model
         self.client = client
-        self.networks = Networks(self.model.id, client)
+        self.networks = NetworksResource(self.model.id, client)
 
     @property
     def id(self):
@@ -19,7 +17,7 @@ class Site:
         return self.model.name
 
 
-class Sites:
+class SitesResource:
 
     def __init__(self, client: APIClientV1):
         self.client = client
@@ -32,5 +30,5 @@ class Sites:
     def get(self, site_id: str) -> SiteModel:
         for site in self.list():
             if site.id == site_id:
-                return Site(SiteModel.model_validate(site), self.client)
+                return SiteResource(SiteModel.model_validate(site), self.client)
         raise ValueError(f"No site found with name {site_id}")
