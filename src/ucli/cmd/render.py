@@ -77,11 +77,13 @@ def render(data: Any, format: str, console: Console = None, max_depth: int = 3):
     if console is None:
         from ucli.cmd.console import console
 
-    if format == "json":
-        render_json(data, console)
-    elif format == "table":
-        render_table(data, console, max_depth)
-    elif format == "text":
-        render_text(data, console, max_depth)
-    else:
-        raise ValueError(f"Unknown format: {format}")
+    match format:
+
+        case "json":
+            render_json(data, console)
+        case "table":
+            render_table(data, console, max_depth)
+        case "text":
+            render_text(data, console, max_depth)
+        case _:
+            raise ValueError(f"Unknown format: {format}")
