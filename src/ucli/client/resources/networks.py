@@ -1,26 +1,23 @@
 from ucli.client.models.networks import NetworkList, NetworkGet
-from ucli.client.resources.site_resource import SiteResource
+from ucli.client.resources.base import Resource
 
 
-class Networks(SiteResource):
+class Networks:
 
-    def __init__(self, client, site_id):
-        super().__init__(client)
+    def __init__(self, site_id: str, client: APIClientV1):
         self.site_id = site_id
+        self.client = client
 
-    def get_id_by_name(self, name: str) -> str:
-        """Return the id for a given network name"""
-        for network in self.list():
-            if network.name == name:
-                return network.id
-        raise ValueError(f"No network found with name {name}")
+    def list(self, **filters) -> list[NetworkList]:
+        data = self.client.request(
+            "GET", f"/sites/{self.site_id}/networks", params=filters
+        )
 
-    def list(self):
-        payload = self.client.request("GET", self.site_path("/networks"))
+        return [NetworkList.model_validate(item) for item in data.get("data")]
 
-        return [NetworkList.model_validate(item) for item in payload.get("data")]
+    def get(self, network_id: str) -> list[NetworkGet]:
+        data = self.client.request(
+            "GET", f"/sites/{self.site_id}/networks/{network_id}"
+        )
 
-    def get(self, id):
-        payload = self.client.request("GET", self.site_path(f"/networks/{id}"))
-
-        return NetworkGet.model_validate(payload)
+        return NetworkGet.model_validate(data)

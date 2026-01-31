@@ -4,10 +4,11 @@ from typing import Optional, Annotated
 from ucli.client.models.config import ClientOptions
 from ucli.cmd.commands import sites
 from ucli.cmd.commands import networks
+from ucli.client.factory import get_client
 
 
 class CLIOptions(BaseModel):
-    sitename: str
+    site_id: Optional[str] = None
     format: str
 
 
@@ -34,7 +35,9 @@ def main(
         envvar="UCLI_VERIFY_TLS",
         help="Set TLS certificate verification",
     ),
-    sitename: Annotated[str, typer.Option(help="Site name")] = "Default",
+    siteid: Annotated[
+        Optional[str], typer.Option(envvar="UCLI_SITE_ID", help="Site ID")
+    ] = None,
     format: Annotated[
         Optional[str], typer.Option(help="Console output format")
     ] = "json",
@@ -45,7 +48,7 @@ def main(
 
     ctx.obj = GlobalOptions(
         client=ClientOptions(base_url=base_url, api_token=token, tls_verify=verify),
-        cli=CLIOptions(sitename=sitename, format=format),
+        cli=CLIOptions(site_id=siteid, format=format),
     )
 
 

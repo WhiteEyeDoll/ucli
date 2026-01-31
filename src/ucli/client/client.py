@@ -32,6 +32,3 @@ class APIClientV1:
     @property
     def sites(self) -> Sites:
         return Sites(self)
-
-    def networks(self, site_id: str) -> Networks:
-        return Networks(client=self, site_id=site_id)
