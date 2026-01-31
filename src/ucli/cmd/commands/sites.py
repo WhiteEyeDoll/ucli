@@ -7,9 +7,7 @@ app = typer.Typer()
 
 
 @app.command()
-def list(
-    ctx: typer.Context
-):
+def list(ctx: typer.Context):
 
     client = get_client(ctx.obj.client)
 

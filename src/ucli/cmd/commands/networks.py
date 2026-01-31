@@ -7,11 +7,10 @@ from ucli.cmd.render import render
 
 app = typer.Typer()
 
+
 @app.command()
-def list(
-    ctx: typer.Context
-):
-    
+def list(ctx: typer.Context):
+
     client = get_client(ctx.obj.client)
 
     global_options: CLIOptions = ctx.obj.cli
@@ -22,16 +21,19 @@ def list(
 
     render(data, format=global_options.format)
 
+
 @app.command()
 def get(
     ctx: typer.Context,
     id: Annotated[Optional[str], typer.Option(help="Network ID")] = None,
-    name: Annotated[Optional[str], typer.Option(help="Network name")] = None
+    name: Annotated[Optional[str], typer.Option(help="Network name")] = None,
 ):
-    
+
     if (id is None and name is None) or (id is not None and name is not None):
-        raise typer.BadParameter("You must provide either --id or --name, but not both.")
-    
+        raise typer.BadParameter(
+            "You must provide either --id or --name, but not both."
+        )
+
     client = get_client(ctx.obj.client)
 
     global_options: CLIOptions = ctx.obj.cli

@@ -1,6 +1,7 @@
 from ucli.client.models.networks import NetworkList, NetworkGet
 from ucli.client.resources.site_resource import SiteResource
 
+
 class Networks(SiteResource):
 
     def __init__(self, client, site_id):
@@ -16,9 +17,9 @@ class Networks(SiteResource):
 
     def list(self):
         payload = self.client.request("GET", self.site_path("/networks"))
-        
+
         return [NetworkList.model_validate(item) for item in payload.get("data")]
-    
+
     def get(self, id):
         payload = self.client.request("GET", self.site_path(f"/networks/{id}"))
 

@@ -3,6 +3,7 @@ from ucli.client.models.config import ClientOptions
 
 _client_cache: APIClientV1 | None = None
 
+
 def get_client(options: ClientOptions) -> APIClientV1:
     global _client_cache
     if _client_cache is not None:
@@ -11,7 +12,7 @@ def get_client(options: ClientOptions) -> APIClientV1:
     client = APIClientV1(
         base_url=options.base_url,
         api_token=options.api_token,
-        tls_verify=options.tls_verify
+        tls_verify=options.tls_verify,
     )
     _client_cache = client
     return client

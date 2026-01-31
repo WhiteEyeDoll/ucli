@@ -1,5 +1,6 @@
 from ucli.client.resources.base import Resource
 
+
 class SiteResource(Resource):
     def __init__(self, client):
         super().__init__(client)

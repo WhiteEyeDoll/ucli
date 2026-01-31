@@ -5,7 +5,7 @@ from ucli.client.models.sites import Site
 
 
 class Sites(Resource):
-    
+
     def get_id_by_name(self, name: str) -> str:
         """Return the id for a given site name"""
         for site in self.list():
@@ -15,7 +15,5 @@ class Sites(Resource):
 
     def list(self):
         payload = self.client.request("GET", "/sites")
-        
-        return [Site.model_validate(item) for item in payload.get("data")]
 
-    
+        return [Site.model_validate(item) for item in payload.get("data")]

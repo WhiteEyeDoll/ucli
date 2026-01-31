@@ -5,6 +5,7 @@ from rich.table import Table
 from pydantic import BaseModel
 import json
 
+
 def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
     if depth > max_depth:
         return "…"
@@ -24,6 +25,7 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
 
     else:
         return str(val)
+
 
 def render_json(data: Any, console: Console):
     data_list = [data] if isinstance(data, BaseModel) else list(data)
@@ -46,7 +48,12 @@ def render_table(data: Any, console: Console, max_depth: int = 3):
 
     for row in data_list:
         row_dict = row.model_dump(exclude_none=True)
-        table.add_row(*(_stringify_nested(row_dict.get(col), max_depth=max_depth) for col in columns))
+        table.add_row(
+            *(
+                _stringify_nested(row_dict.get(col), max_depth=max_depth)
+                for col in columns
+            )
+        )
 
     console.print(table)
 
@@ -69,7 +76,6 @@ def render(data: Any, format: str, console: Console = None, max_depth: int = 3):
 
     if console is None:
         from ucli.cmd.console import console
-
 
     if format == "json":
         render_json(data, console)
