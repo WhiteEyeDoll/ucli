@@ -7,6 +7,7 @@ from ucli.cmd.commands import networks
 
 class CLIOptions(BaseModel):
     sitename: str
+    format: str
 
 class GlobalOptions(BaseModel):
     cli: CLIOptions
@@ -29,7 +30,8 @@ def main(
                                envvar="UCLI_VERIFY_TLS",
                                help="Set TLS certificate verification"
                             ),
-    sitename: Annotated[str, typer.Option(help="Site name")] = "Default"
+    sitename: Annotated[str, typer.Option(help="Site name")] = "Default",
+    format: Annotated[Optional[str],typer.Option(help="Console output format")] = "json"
 ):
     """
     Global options
@@ -42,7 +44,8 @@ def main(
             tls_verify=verify
         ),
         cli=CLIOptions(
-            sitename=sitename
+            sitename=sitename,
+            format=format
         ),
     )
 

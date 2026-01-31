@@ -9,11 +9,11 @@ class NetworkDHCPGuarding(BaseModel):
     trustedDhcpServerIpAddresses: list[str]
 
 class NetworkBase(BaseModel):
-    management: str
-    id: str
     name: str
-    enabled: bool
     vlanId: int
+    enabled: bool
+    id: str
+    management: str
     metadata: NetworkMetadata
 
 class NetworkList(NetworkBase):

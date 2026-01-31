@@ -1,8 +1,7 @@
 import json
 import typer
 from ucli.client.factory import get_client
-
-from ucli.cmd.console import console
+from ucli.cmd.render import render
 
 app = typer.Typer()
 
@@ -14,6 +13,8 @@ def list(
 
     client = get_client(ctx.obj.client)
 
+    global_options: CLIOptions = ctx.obj.cli
+
     data = client.sites.list()
 
-    console.print(json.dumps(data))
+    render(data, format=global_options.format)

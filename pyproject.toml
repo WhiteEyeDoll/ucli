@@ -1,7 +1,11 @@
 [project]
 name = "ucli"
 version = "0.1.0"
-description = "Add your description here"
+description = "The ugly unifi network api python cli"
+authors = [
+    {name = "Pauli Huttunen", email = "pauli.k.huttunen@gmail.com"}
+]
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [

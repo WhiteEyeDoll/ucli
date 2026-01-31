@@ -3,6 +3,7 @@ import json
 from typing import Optional, Annotated
 from ucli.client.factory import get_client
 from ucli.cmd.console import console
+from ucli.cmd.render import render
 
 app = typer.Typer()
 
@@ -13,11 +14,13 @@ def list(
     
     client = get_client(ctx.obj.client)
 
+    global_options: CLIOptions = ctx.obj.cli
+
     site_id = client.sites.get_id_by_name(ctx.obj.cli.sitename)
 
-    networks = client.networks(site_id).list()
+    data = client.networks(site_id).list()
 
-    console.print(json.dumps(networks))
+    render(data, format=global_options.format)
 
 @app.command()
 def get(
@@ -31,6 +34,8 @@ def get(
     
     client = get_client(ctx.obj.client)
 
+    global_options: CLIOptions = ctx.obj.cli
+
     site_id = client.sites.get_id_by_name(ctx.obj.cli.sitename)
 
     if id is None:
@@ -38,6 +43,6 @@ def get(
     else:
         network_id = id
 
-    network = client.networks(site_id).get(network_id)
+    data = client.networks(site_id).get(network_id)
 
-    console.print(json.dumps(network))
+    render(data, format=global_options.format)
