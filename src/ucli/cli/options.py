@@ -11,5 +11,5 @@ class CLIOptionsModel(BaseModel):
 
 
 class GlobalOptionsModel(BaseModel):
-    cli: CLIOptionsModel
-    client: ClientOptionsModel
+    cli_options: CLIOptionsModel
+    client_options: ClientOptionsModel

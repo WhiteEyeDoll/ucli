@@ -5,7 +5,7 @@ import typer
 
 from ucli.cli.options import CLIOptionsModel
 from ucli.cli.render import render
-from ucli.client.factory import get_client
+from ucli.client.client import APIClientV1
 from ucli.client.resources.site import SiteResource
 
 app = typer.Typer()
@@ -14,9 +14,9 @@ app = typer.Typer()
 @app.command("list")
 def networks_list(ctx: typer.Context):
 
-    client = get_client(ctx.obj.client)
+    client = APIClientV1.get_client(ctx.obj.client_options)
 
-    global_options: CLIOptionsModel = ctx.obj.cli
+    global_options: CLIOptionsModel = ctx.obj.cli_options
 
     site: SiteResource = client.sites.get(global_options.site_id)
 
@@ -31,9 +31,9 @@ def networks_get(
     network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
 ):
 
-    client = get_client(ctx.obj.client)
+    client = APIClientV1.get_client(ctx.obj.client_options)
 
-    global_options: CLIOptionsModel = ctx.obj.cli
+    global_options: CLIOptionsModel = ctx.obj.cli_options
 
     site = client.sites.get(global_options.site_id)
 

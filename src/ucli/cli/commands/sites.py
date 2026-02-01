@@ -2,7 +2,7 @@ import typer
 
 from ucli.cli.options import CLIOptionsModel
 from ucli.cli.render import render
-from ucli.client.factory import get_client
+from ucli.client.client import APIClientV1
 
 app = typer.Typer()
 
@@ -10,9 +10,9 @@ app = typer.Typer()
 @app.command("list")
 def sites_list(ctx: typer.Context):
 
-    client = get_client(ctx.obj.client)
+    client = APIClientV1.get_client(ctx.obj.client_options)
 
-    global_options: CLIOptionsModel = ctx.obj.cli
+    global_options: CLIOptionsModel = ctx.obj.cli_options
 
     data = client.sites.list()
 
