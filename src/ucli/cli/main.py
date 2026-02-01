@@ -30,15 +30,15 @@ def main(
     base_url: Annotated[
         str, typer.Option(envvar="UCLI_BASE_URL", help="Base URL of the Unifi console")
     ],
-    site_id: Annotated[
-        UUID, typer.Option(envvar="UCLI_SITE_ID", help="Site ID")
-    ],
+    site_id: Annotated[UUID, typer.Option(envvar="UCLI_SITE_ID", help="Site ID")],
     verify: Annotated[
-        bool, typer.Option(
-        "--verify/--no-verify",
-        envvar="UCLI_VERIFY_TLS",
-        help="Set TLS certificate verification",
-    )] = True,
+        bool,
+        typer.Option(
+            "--verify/--no-verify",
+            envvar="UCLI_VERIFY_TLS",
+            help="Set TLS certificate verification",
+        ),
+    ] = True,
     format: Annotated[
         Optional[str], typer.Option(help="Console output format")
     ] = "json",
@@ -48,7 +48,9 @@ def main(
     """
 
     ctx.obj = GlobalOptionsModel(
-        client=ClientOptionsModel(base_url=base_url, api_token=token, tls_verify=verify),
+        client=ClientOptionsModel(
+            base_url=base_url, api_token=token, tls_verify=verify
+        ),
         cli=CLIOptionsModel(site_id=site_id, format=format),
     )
 

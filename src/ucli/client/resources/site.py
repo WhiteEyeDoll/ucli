@@ -18,7 +18,6 @@ class SiteResource:
         return self.model.name
 
 
-
 class SitesResource:
 
     def __init__(self, client: APIClientV1):

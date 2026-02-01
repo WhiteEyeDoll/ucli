@@ -2,6 +2,7 @@ from pydantic import BaseModel, model_validator, field_serializer
 from typing import Optional
 from uuid import UUID
 
+
 class NetworkMetadataModel(BaseModel):
     origin: str
 
