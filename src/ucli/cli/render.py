@@ -33,8 +33,14 @@ def render_json(data: BaseModel | list[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
         serialized = data.model_dump(mode="json", exclude_none=True)
-    else:
+    elif isinstance(data, list):
+        if not all(isinstance(item, BaseModel) for item in data):
+            raise TypeError(
+                "All items in the list must be instances of Pydantic BaseModel"
+            )
         serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
+    else:
+        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
 
     output = json.dumps(serialized)
 
@@ -45,8 +51,14 @@ def render_yaml(data: BaseModel | list[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
         serialized = data.model_dump(mode="json", exclude_none=True)
-    else:
+    elif isinstance(data, list):
+        if not all(isinstance(item, BaseModel) for item in data):
+            raise TypeError(
+                "All items in the list must be instances of Pydantic BaseModel"
+            )
         serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
+    else:
+        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
 
     output = yaml.safe_dump(
         serialized,
@@ -63,12 +75,14 @@ def render_table(
 
     if isinstance(data, BaseModel):
         data_list = [data]
-    else:
+    elif isinstance(data, list):
+        if not all(isinstance(item, BaseModel) for item in data):
+            raise TypeError(
+                "All items in the list must be instances of Pydantic BaseModel"
+            )
         data_list = data
-
-    if not data_list:
-        console.print("No data")
-        return
+    else:
+        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
 
     columns = list(data_list[0].model_dump(mode="json", exclude_none=True).keys())
 
