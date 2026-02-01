@@ -19,17 +19,21 @@ dependencies = [
 [project.scripts]
 ucli = "ucli:app"
 
-[tool.uv.scripts]
-fmt = "black src"
-lint-imports = "isort --check-only src"
-lint = "pylint src"
-
 [tool.isort]
 profile = "black"
 line_length = 88
 multi_line_output = 3
 include_trailing_comma = true
 known_first_party = ["ucli"]
+
+[tool.pylint]
+load-plugins = []
+max-line-length = 88
+disable = [
+    "C0114", # missing-module-docstring
+    "C0115", # missing-class-docstring
+    "C0116"  # missing-function-docstring
+]
 
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
