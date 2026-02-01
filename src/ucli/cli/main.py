@@ -24,7 +24,7 @@ def main(
     tls_verify: Annotated[
         bool,
         typer.Option(
-            "--verify/--no-verify",
+            "--tls-verify/--tls-no-verify",
             envvar="UCLI_TLS_VERIFY",
             help="Set TLS certificate verification",
         ),
