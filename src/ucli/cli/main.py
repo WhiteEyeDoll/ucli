@@ -1,28 +1,18 @@
-import typer
-from pydantic import BaseModel
-from typing import Optional, Annotated
-from ucli.client.models.config import ClientOptionsModel
-from ucli.cli.commands import sites
-from ucli.cli.commands import networks
-from ucli.client.factory import get_client
+from typing import Annotated, Optional
 from uuid import UUID
 
+import typer
 
-class CLIOptionsModel(BaseModel):
-    site_id: UUID
-    format: str
-
-
-class GlobalOptionsModel(BaseModel):
-    cli: CLIOptionsModel
-    client: ClientOptionsModel
-
+from ucli.cli.commands import networks, sites
+from ucli.cli.options import CLIOptionsModel, GlobalOptionsModel
+from ucli.client.models.options import ClientOptionsModel
 
 app = typer.Typer()
 
 
 @app.callback()
 def main(
+    *,
     ctx: typer.Context,
     token: Annotated[
         str, typer.Option(envvar="UCLI_API_TOKEN", help="Unifi console API token")
@@ -39,7 +29,7 @@ def main(
             help="Set TLS certificate verification",
         ),
     ] = True,
-    format: Annotated[
+    output_format: Annotated[
         Optional[str], typer.Option(help="Console output format")
     ] = "json",
 ):
@@ -51,7 +41,7 @@ def main(
         client=ClientOptionsModel(
             base_url=base_url, api_token=token, tls_verify=verify
         ),
-        cli=CLIOptionsModel(site_id=site_id, format=format),
+        cli=CLIOptionsModel(site_id=site_id, format=output_format),
     )
 
 

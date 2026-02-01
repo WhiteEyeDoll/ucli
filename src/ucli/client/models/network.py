@@ -1,6 +1,7 @@
-from pydantic import BaseModel, model_validator, field_serializer
 from typing import Optional
 from uuid import UUID
+
+from pydantic import BaseModel
 
 
 class NetworkMetadataModel(BaseModel):

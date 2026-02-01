@@ -1,5 +1,12 @@
-from ucli.client.models.network import NetworkListModel, NetworkGetModel
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
+
+from ucli.client.models.network import NetworkGetModel, NetworkListModel
+
+if TYPE_CHECKING:
+    from ucli.client.client import APIClientV1
 
 
 class NetworksResource:
@@ -9,9 +16,7 @@ class NetworksResource:
         self.client = client
 
     def list(self) -> list[NetworkListModel]:
-        response = self.client.request(
-            "GET", f"/sites/{self.site_id}/networks", params=filters
-        )
+        response = self.client.request("GET", f"/sites/{self.site_id}/networks")
 
         return [NetworkListModel.model_validate(item) for item in response.get("data")]
 

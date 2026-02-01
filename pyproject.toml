@@ -29,6 +29,7 @@ known_first_party = ["ucli"]
 [tool.pylint]
 load-plugins = []
 max-line-length = 88
+max-args = 7
 disable = [
     "C0114", # missing-module-docstring
     "C0115", # missing-class-docstring

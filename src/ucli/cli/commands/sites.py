@@ -1,14 +1,14 @@
 import typer
-from ucli.client.factory import get_client
+
+from ucli.cli.options import CLIOptionsModel
 from ucli.cli.render import render
-from uuid import UUID
-from typing import Annotated
+from ucli.client.factory import get_client
 
 app = typer.Typer()
 
 
-@app.command()
-def list(ctx: typer.Context):
+@app.command("list")
+def sites_list(ctx: typer.Context):
 
     client = get_client(ctx.obj.client)
 
@@ -16,4 +16,4 @@ def list(ctx: typer.Context):
 
     data = client.sites.list()
 
-    render(data, format=global_options.format)
+    render(data, output_format=global_options.format)

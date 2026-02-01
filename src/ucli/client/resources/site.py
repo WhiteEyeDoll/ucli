@@ -1,10 +1,17 @@
-from ucli.client.resources.network import NetworksResource
-from ucli.client.models.site import SiteModel
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID
+
+from ucli.client.models.site import SiteModel
+from ucli.client.resources.network import NetworksResource
+
+if TYPE_CHECKING:
+    from ucli.client.client import APIClientV1
 
 
 class SiteResource:
-    def __init__(self, model: SiteModel, client: "APIClientV1"):
+    def __init__(self, model: SiteModel, client: APIClientV1):
         self.model = model
         self.client = client
         self.networks = NetworksResource(self.model.id, client)

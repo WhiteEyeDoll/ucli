@@ -1,14 +1,17 @@
-import typer
-from typing import Optional, Annotated
-from ucli.client.factory import get_client
-from ucli.cli.render import render
+from typing import Annotated
 from uuid import UUID
+
+import typer
+
+from ucli.cli.options import CLIOptionsModel
+from ucli.cli.render import render
+from ucli.client.factory import get_client
 
 app = typer.Typer()
 
 
-@app.command()
-def list(ctx: typer.Context):
+@app.command("list")
+def networks_list(ctx: typer.Context):
 
     client = get_client(ctx.obj.client)
 
@@ -18,13 +21,13 @@ def list(ctx: typer.Context):
 
     data = site.networks.list()
 
-    render(data, format=global_options.format)
+    render(data, output_format=global_options.format)
 
 
-@app.command()
-def get(
+@app.command("get")
+def networks_get(
     ctx: typer.Context,
-    id: Annotated[str, typer.Option(help="Network ID")] = None,
+    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")] = None,
 ):
 
     client = get_client(ctx.obj.client)
@@ -33,6 +36,6 @@ def get(
 
     site = client.sites.get(global_options.site_id)
 
-    data = site.networks.get(id)
+    data = site.networks.get(network_id)
 
-    render(data, format=global_options.format)
+    render(data, output_format=global_options.format)

@@ -1,16 +1,19 @@
 import json
+from typing import Any
+
 import yaml
-from typing import Any, Iterable
+from pydantic import BaseModel
 from rich.console import Console
 from rich.table import Table
-from pydantic import BaseModel
+
+from ucli.cli.console import console as default_console
 
 
 def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
     if depth > max_depth:
         return "…"
 
-    elif isinstance(val, dict):
+    if isinstance(val, dict):
         lines = []
         for k, v in val.items():
             sub = _stringify_nested(v, depth + 1, max_depth)
@@ -20,18 +23,17 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
                 lines.append(f"{k}: {v}")
         return "\n".join(lines)
 
-    elif isinstance(val, list):
+    if isinstance(val, list):
         return "\n".join(_stringify_nested(v, depth + 1, max_depth) for v in val)
 
-    else:
-        return str(val)
+    return str(val)
 
 
 def render_json(data: BaseModel | list[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
         serialized = data.model_dump(mode="json", exclude_none=True)
-    elif isinstance(data, list):
+    else:
         serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
 
     output = json.dumps(serialized)
@@ -43,7 +45,7 @@ def render_yaml(data: BaseModel | list[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
         serialized = data.model_dump(mode="json", exclude_none=True)
-    elif isinstance(data, list):
+    else:
         serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
 
     output = yaml.safe_dump(
@@ -61,7 +63,7 @@ def render_table(
 
     if isinstance(data, BaseModel):
         data_list = [data]
-    elif isinstance(data, list):
+    else:
         data_list = data
 
     if not data_list:
@@ -89,15 +91,11 @@ def render_table(
 
 def render(
     data: BaseModel | list[BaseModel],
-    format: str,
-    console: Console = None,
+    output_format: str,
+    console: Console = default_console,
     max_depth: int = 3,
 ):
-
-    if console is None:
-        from ucli.cli.console import console
-
-    match format:
+    match output_format:
 
         case "json":
             render_json(data, console)
@@ -106,4 +104,4 @@ def render(
         case "table":
             render_table(data, console, max_depth)
         case _:
-            raise ValueError(f"Unknown format: {format}")
+            raise ValueError(f"Unknown format: {output_format}")
