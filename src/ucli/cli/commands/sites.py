@@ -1,6 +1,8 @@
 import typer
 from ucli.client.factory import get_client
-from ucli.cmd.render import render
+from ucli.cli.render import render
+from uuid import UUID
+from typing import Annotated
 
 app = typer.Typer()
 

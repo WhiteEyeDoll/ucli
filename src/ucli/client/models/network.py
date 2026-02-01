@@ -1,6 +1,6 @@
 from pydantic import BaseModel, model_validator, field_serializer
 from typing import Optional
-
+from uuid import UUID
 
 class NetworkMetadataModel(BaseModel):
     origin: str
@@ -14,7 +14,7 @@ class NetworkBaseModel(BaseModel):
     name: str
     vlanId: int
     enabled: bool
-    id: str
+    id: UUID
     management: str
     metadata: NetworkMetadataModel
 

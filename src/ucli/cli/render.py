@@ -30,9 +30,9 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
 def render_json(data: BaseModel | list[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
-        serialized = data.model_dump(exclude_none=True)
+        serialized = data.model_dump(mode="json", exclude_none=True)
     elif isinstance(data, list):
-        serialized = [item.model_dump(exclude_none=True) for item in data]
+        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
 
     output = json.dumps(serialized)
 
@@ -42,9 +42,9 @@ def render_json(data: BaseModel | list[BaseModel], console: Console):
 def render_yaml(data: BaseModel | list[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
-        serialized = data.model_dump(exclude_none=True)
+        serialized = data.model_dump(mode="json", exclude_none=True)
     elif isinstance(data, list):
-        serialized = [item.model_dump(exclude_none=True) for item in data]
+        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
 
     output = yaml.safe_dump(
         serialized,
@@ -68,7 +68,7 @@ def render_table(
         console.print("No data")
         return
 
-    columns = list(data_list[0].model_dump(exclude_none=True).keys())
+    columns = list(data_list[0].model_dump(mode="json", exclude_none=True).keys())
 
     table = Table(show_header=True, header_style="bold magenta", expand=True)
 
@@ -76,7 +76,7 @@ def render_table(
         table.add_column(col, no_wrap=False)
 
     for item in data_list:
-        item_serialized = item.model_dump(exclude_none=True)
+        item_serialized = item.model_dump(mode="json", exclude_none=True)
         table.add_row(
             *(
                 _stringify_nested(item_serialized.get(col), max_depth=max_depth)
@@ -95,7 +95,7 @@ def render(
 ):
 
     if console is None:
-        from ucli.cmd.console import console
+        from ucli.cli.console import console
 
     match format:
 

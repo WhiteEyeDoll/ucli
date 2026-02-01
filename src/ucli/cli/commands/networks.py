@@ -1,7 +1,8 @@
 import typer
 from typing import Optional, Annotated
 from ucli.client.factory import get_client
-from ucli.cmd.render import render
+from ucli.cli.render import render
+from uuid import UUID
 
 app = typer.Typer()
 

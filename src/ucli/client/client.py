@@ -1,6 +1,5 @@
 import httpx
 from ucli.client.resources.site import SitesResource
-from ucli.client.resources.network import NetworksResource
 
 
 class APIClientV1:
