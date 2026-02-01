@@ -29,7 +29,9 @@ def main(
             help="Set TLS certificate verification",
         ),
     ] = True,
-    output_format: Annotated[str, typer.Option(help="Console output format")] = "json",
+    output_format: Annotated[
+        str, typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="Console output format")
+    ] = "json",
 ):
     """
     Global options
