@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -11,11 +12,11 @@ if TYPE_CHECKING:
 
 class NetworksResource:
 
-    def __init__(self, site_id: str, client: APIClientV1):
+    def __init__(self, site_id: UUID, client: APIClientV1):
         self.site_id = site_id
         self.client = client
 
-    def list(self) -> list[NetworkListModel]:
+    def list(self) -> Sequence[NetworkListModel]:
         response = self.client.request("GET", f"/sites/{self.site_id}/networks")
 
         return [NetworkListModel.model_validate(item) for item in response.get("data")]

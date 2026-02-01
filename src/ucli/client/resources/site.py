@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -30,12 +31,12 @@ class SitesResource:
     def __init__(self, client: APIClientV1):
         self.client = client
 
-    def list(self) -> list[SiteModel]:
+    def list(self) -> Sequence[SiteModel]:
         response = self.client.request("GET", "/sites")
 
         return [SiteModel.model_validate(item) for item in response.get("data")]
 
-    def get(self, site_id: UUID) -> SiteModel:
+    def get(self, site_id: UUID) -> SiteResource:
         for site in self.list():
             if site.id == site_id:
                 return SiteResource(SiteModel.model_validate(site), self.client)

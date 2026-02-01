@@ -1,4 +1,5 @@
 import json
+from collections.abc import Sequence
 from typing import Any
 
 import yaml
@@ -29,7 +30,7 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
     return str(val)
 
 
-def render_json(data: BaseModel | list[BaseModel], console: Console):
+def render_json(data: BaseModel | Sequence[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
         serialized = data.model_dump(mode="json", exclude_none=True)
@@ -47,7 +48,7 @@ def render_json(data: BaseModel | list[BaseModel], console: Console):
     console.print_json(output)
 
 
-def render_yaml(data: BaseModel | list[BaseModel], console: Console):
+def render_yaml(data: BaseModel | Sequence[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
         serialized = data.model_dump(mode="json", exclude_none=True)
@@ -70,7 +71,7 @@ def render_yaml(data: BaseModel | list[BaseModel], console: Console):
 
 
 def render_table(
-    data: BaseModel | list[BaseModel], console: Console, max_depth: int = 3
+    data: BaseModel | Sequence[BaseModel], console: Console, max_depth: int = 3
 ):
 
     if isinstance(data, BaseModel):
@@ -104,7 +105,7 @@ def render_table(
 
 
 def render(
-    data: BaseModel | list[BaseModel],
+    data: BaseModel | Sequence[BaseModel],
     output_format: str,
     console: Console = default_console,
     max_depth: int = 3,

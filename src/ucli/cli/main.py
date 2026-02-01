@@ -29,9 +29,7 @@ def main(
             help="Set TLS certificate verification",
         ),
     ] = True,
-    output_format: Annotated[
-        Optional[str], typer.Option(help="Console output format")
-    ] = "json",
+    output_format: Annotated[str, typer.Option(help="Console output format")] = "json",
 ):
     """
     Global options
@@ -41,7 +39,7 @@ def main(
         client=ClientOptionsModel(
             base_url=base_url, api_token=token, tls_verify=verify
         ),
-        cli=CLIOptionsModel(site_id=site_id, format=output_format),
+        cli=CLIOptionsModel(site_id=site_id, output_format=output_format),
     )
 
 

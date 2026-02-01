@@ -16,4 +16,4 @@ def sites_list(ctx: typer.Context):
 
     data = client.sites.list()
 
-    render(data, output_format=global_options.format)
+    render(data, output_format=global_options.output_format)

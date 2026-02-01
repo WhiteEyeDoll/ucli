@@ -7,7 +7,7 @@ from ucli.client.models.options import ClientOptionsModel
 
 class CLIOptionsModel(BaseModel):
     site_id: UUID
-    format: str
+    output_format: str
 
 
 class GlobalOptionsModel(BaseModel):

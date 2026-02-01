@@ -6,6 +6,7 @@ import typer
 from ucli.cli.options import CLIOptionsModel
 from ucli.cli.render import render
 from ucli.client.factory import get_client
+from ucli.client.resources.site import SiteResource
 
 app = typer.Typer()
 
@@ -17,17 +18,17 @@ def networks_list(ctx: typer.Context):
 
     global_options: CLIOptionsModel = ctx.obj.cli
 
-    site = client.sites.get(global_options.site_id)
+    site: SiteResource = client.sites.get(global_options.site_id)
 
     data = site.networks.list()
 
-    render(data, output_format=global_options.format)
+    render(data, output_format=global_options.output_format)
 
 
 @app.command("get")
 def networks_get(
     ctx: typer.Context,
-    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")] = None,
+    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
 ):
 
     client = get_client(ctx.obj.client)
@@ -38,4 +39,4 @@ def networks_get(
 
     data = site.networks.get(network_id)
 
-    render(data, output_format=global_options.format)
+    render(data, output_format=global_options.output_format)

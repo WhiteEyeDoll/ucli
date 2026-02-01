@@ -36,6 +36,14 @@ disable = [
     "C0116"  # missing-function-docstring
 ]
 
+[tool.pyright]
+typeCheckingMode = "standard"
+include = ["src"]
+exclude = ["**/__pycache__"]
+
+reportMissingImports = "error"
+reportMissingTypeStubs = false
+
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
@@ -45,5 +53,6 @@ dev = [
     "black>=26.1.0",
     "isort>=7.0.0",
     "pylint>=4.0.4",
+    "pyright>=1.1.408",
 ]
 
