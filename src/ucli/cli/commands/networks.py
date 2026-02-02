@@ -29,7 +29,7 @@ def networks_get(
     network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
 ):
 
-    client = APIClientV1.get_client(ctx.obj.client_options)
+    client = APIClientV1.get_client(ctx.obj["client_options"])
 
     site = client.sites.get(ctx.obj["site_id"])
 
