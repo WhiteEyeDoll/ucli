@@ -1,25 +1,23 @@
+from functools import cache
+from typing import Self
+
 import httpx
-from ucli.client.resources.sites import Sites
-from ucli.client.resources.networks import Networks
+
+from ucli.client.models.options import ClientOptionsModel
+from ucli.client.resources.site import SitesResource
 
 
 class APIClientV1:
 
-    def __init__(
-        self,
-        base_url: str,
-        api_token: str,
-        tls_verify: bool = True,
-    ):
+    def __init__(self, options: ClientOptionsModel):
 
-        base_url = base_url.rstrip("/")
-        self.base_url = f"{base_url}/proxy/network/integration/v1"
+        self.options = options
 
         self._client = httpx.Client(
-            base_url=self.base_url,
-            verify=tls_verify,
+            base_url=f"{self.options.base_url}proxy/network/integration/v1",
+            verify=self.options.verify_tls,
             timeout=10.0,
-            headers={"X-API-KEY": api_token},
+            headers={"X-API-KEY": self.options.api_key},
         )
 
     def request(self, method: str, path: str, **kwargs):
@@ -30,8 +28,11 @@ class APIClientV1:
         return response.json()
 
     @property
-    def sites(self) -> Sites:
-        return Sites(self)
+    def sites(self) -> SitesResource:
+        return SitesResource(self)
 
-    def networks(self, site_id: str) -> Networks:
-        return Networks(client=self, site_id=site_id)
+    @classmethod
+    @cache
+    def get_client(cls, options: ClientOptionsModel) -> Self:
+
+        return cls(options)

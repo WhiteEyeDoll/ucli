@@ -1,7 +1,9 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
-class Site(BaseModel):
+class SiteModel(BaseModel):
     name: str
-    id: str
+    id: UUID
     internalReference: str

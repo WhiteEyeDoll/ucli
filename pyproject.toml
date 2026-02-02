@@ -11,14 +11,48 @@ requires-python = ">=3.14"
 dependencies = [
     "httpx>=0.28.1",
     "pydantic>=2.12.5",
+    "pyyaml>=6.0.3",
     "rich>=14.2.0",
     "typer>=0.21.1",
 ]
 
 [project.scripts]
-ucli = "ucli:main"
+ucli = "ucli:app"
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+known_first_party = ["ucli"]
+
+[tool.pylint]
+load-plugins = []
+max-line-length = 88
+max-args = 7
+disable = [
+    "C0114", # missing-module-docstring
+    "C0115", # missing-class-docstring
+    "C0116"  # missing-function-docstring
+]
+
+[tool.pyright]
+typeCheckingMode = "standard"
+include = ["src"]
+exclude = ["**/__pycache__"]
+
+reportMissingImports = "error"
+reportMissingTypeStubs = false
 
 [build-system]
-requires = ["uv_build"]
+requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "black>=26.1.0",
+    "isort>=7.0.0",
+    "pylint>=4.0.4",
+    "pyright>=1.1.408",
+]
 
