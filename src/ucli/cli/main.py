@@ -15,12 +15,13 @@ app = typer.Typer()
 def main(
     *,
     ctx: typer.Context,
-    token: Annotated[
-        str, typer.Option(envvar="UCLI_API_TOKEN", help="Unifi console API token")
-    ],
+    api_key: Annotated[str, typer.Option(envvar="UCLI_API_KEY", help="Unifi API key")],
     base_url: Annotated[
         str,
-        typer.Option(envvar="UCLI_BASE_URL", help="Base URL of the Unifi console"),
+        typer.Option(
+            envvar="UCLI_BASE_URL",
+            help="Base URL of the Unifi API in the form of https://hostname/",
+        ),
     ],
     site_id: Annotated[UUID, typer.Option(envvar="UCLI_SITE_ID", help="Site ID")],
     tls_verify: Annotated[
@@ -32,7 +33,7 @@ def main(
         ),
     ] = True,
     output_format: Annotated[
-        str, typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="Console output format")
+        str, typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="CLI output format")
     ] = "json",
 ):
     """
@@ -41,7 +42,7 @@ def main(
 
     ctx.obj = GlobalOptionsModel(
         client_options=ClientOptionsModel(
-            base_url=HttpUrl(base_url), api_token=token, tls_verify=tls_verify
+            base_url=HttpUrl(base_url), api_key=api_key, tls_verify=tls_verify
         ),
         cli_options=CLIOptionsModel(site_id=site_id, output_format=output_format),
     )

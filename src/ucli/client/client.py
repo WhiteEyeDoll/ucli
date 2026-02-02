@@ -17,7 +17,7 @@ class APIClientV1:
             base_url=f"{self.options.base_url}proxy/network/integration/v1",
             verify=self.options.tls_verify,
             timeout=10.0,
-            headers={"X-API-KEY": self.options.api_token},
+            headers={"X-API-KEY": self.options.api_key},
         )
 
     def request(self, method: str, path: str, **kwargs):
