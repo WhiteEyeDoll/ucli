@@ -1,12 +1,10 @@
 from typing import Annotated
-from uuid import UUID
 
 import typer
-from pydantic import HttpUrl
+from pydantic import HttpUrl, ValidationError
 
 from ucli.cli.commands import networks, sites
-from ucli.cli.options import CLIOptionsModel, GlobalOptionsModel
-from ucli.cli.render import OutputFormat
+from ucli.cli.types import OutputFormat
 from ucli.client.models.options import ClientOptionsModel
 
 app = typer.Typer()
@@ -24,11 +22,10 @@ def main(
             help="Base URL of the Unifi API in the form of https://hostname/",
         ),
     ],
-    site_id: Annotated[UUID, typer.Option(envvar="UCLI_SITE_ID", help="Site ID")],
     tls_verify: Annotated[
         bool,
         typer.Option(
-            "--tls-verify/--tls-no-verify",
+            "--verify-tls/--no-verify-tls",
             envvar="UCLI_TLS_VERIFY",
             help="Set TLS certificate verification",
         ),
@@ -42,12 +39,19 @@ def main(
     Global options
     """
 
-    ctx.obj = GlobalOptionsModel(
-        client_options=ClientOptionsModel(
-            base_url=HttpUrl(base_url), api_key=api_key, tls_verify=tls_verify
-        ),
-        cli_options=CLIOptionsModel(site_id=site_id, output_format=output_format),
-    )
+    try:
+        client_options = ClientOptionsModel(
+            base_url=HttpUrl(base_url),
+            api_key=api_key,
+            tls_verify=tls_verify,
+        )
+    except ValidationError as error:
+        raise typer.BadParameter(f"Invalid client options:\n{error}") from error
+
+    ctx.obj = {
+        "client_options": client_options,
+        "output_format": output_format,
+    }
 
 
 app.add_typer(sites.app, name="sites")
