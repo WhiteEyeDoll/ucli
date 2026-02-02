@@ -22,7 +22,7 @@ def main(
             help="Base URL of the Unifi API in the form of https://hostname/",
         ),
     ],
-    tls_verify: Annotated[
+    verify_tls: Annotated[
         bool,
         typer.Option(
             "--verify-tls/--no-verify-tls",
@@ -40,7 +40,7 @@ def main(
         client_options = ClientOptionsModel(
             base_url=HttpUrl(base_url),
             api_key=api_key,
-            tls_verify=tls_verify,
+            verify_tls=verify_tls,
         )
     except ValidationError as error:
         raise typer.BadParameter(f"Invalid client options:\n{error}") from error
