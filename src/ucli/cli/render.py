@@ -1,6 +1,6 @@
 import json
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel
@@ -8,6 +8,8 @@ from rich.console import Console
 from rich.table import Table
 
 from ucli.cli.console import console as default_console
+
+OutputFormat = Literal["json", "yaml", "table"]
 
 
 def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
@@ -106,7 +108,7 @@ def render_table(
 
 def render(
     data: BaseModel | Sequence[BaseModel],
-    output_format: str,
+    output_format: OutputFormat,
     console: Console = default_console,
     max_depth: int = 3,
 ):

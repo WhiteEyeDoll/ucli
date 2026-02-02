@@ -6,6 +6,7 @@ from pydantic import HttpUrl
 
 from ucli.cli.commands import networks, sites
 from ucli.cli.options import CLIOptionsModel, GlobalOptionsModel
+from ucli.cli.render import OutputFormat
 from ucli.client.models.options import ClientOptionsModel
 
 app = typer.Typer()
@@ -33,7 +34,8 @@ def main(
         ),
     ] = True,
     output_format: Annotated[
-        str, typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="CLI output format")
+        OutputFormat,
+        typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="CLI output format"),
     ] = "json",
 ):
     """
