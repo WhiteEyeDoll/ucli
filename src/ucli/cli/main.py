@@ -26,7 +26,7 @@ def main(
         bool,
         typer.Option(
             "--verify-tls/--no-verify-tls",
-            envvar="UCLI_TLS_VERIFY",
+            envvar="UCLI_VERIFY_TLS",
             help="Set TLS certificate verification",
         ),
     ] = True,
