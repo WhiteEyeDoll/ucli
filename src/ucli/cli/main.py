@@ -35,9 +35,6 @@ def main(
         typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="CLI output format"),
     ] = "json",
 ):
-    """
-    Global options
-    """
 
     try:
         client_options = ClientOptionsModel(
