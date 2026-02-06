@@ -6,7 +6,6 @@ import typer
 from ucli.cli.render import render
 from ucli.cli.site_scoped import site_scoped_app
 from ucli.client.client import APIClientV1
-from ucli.client.resources.site import SiteResource
 
 app = site_scoped_app()
 
@@ -14,13 +13,12 @@ app = site_scoped_app()
 @app.command("list")
 def networks_list(ctx: typer.Context):
 
-    client = APIClientV1.get_client(ctx.obj["client_options"])
+    with APIClientV1(ctx.obj["client_options"]) as client:
+        site = client.sites.get(ctx.obj["site_id"])
 
-    site: SiteResource = client.sites.get(ctx.obj["site_id"])
+        data = site.networks.list()
 
-    data = site.networks.list()
-
-    render(data, output_format=ctx.obj["output_format"])
+        render(data, output_format=ctx.obj["output_format"])
 
 
 @app.command("get")
@@ -29,10 +27,9 @@ def networks_get(
     network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
 ):
 
-    client = APIClientV1.get_client(ctx.obj["client_options"])
+    with APIClientV1(ctx.obj["client_options"]) as client:
+        site = client.sites.get(ctx.obj["site_id"])
 
-    site = client.sites.get(ctx.obj["site_id"])
+        data = site.networks.get(network_id)
 
-    data = site.networks.get(network_id)
-
-    render(data, output_format=ctx.obj["output_format"])
+        render(data, output_format=ctx.obj["output_format"])

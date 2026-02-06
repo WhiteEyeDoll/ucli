@@ -20,7 +20,7 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
         for k, v in val.items():
             sub = _stringify_nested(v, depth + 1, max_depth)
             if isinstance(v, (dict, list)):
-                lines.append(f"{k}:\n  {sub.replace("\n", "\n  ")}")
+                lines.append(f"{k}:\n  {sub.replace('\n', '\n  ')}")
             else:
                 lines.append(f"{k}: {v}")
         return "\n".join(lines)
@@ -34,15 +34,24 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
 def render_json(data: BaseModel | Sequence[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
+
         serialized = data.model_dump(mode="json", exclude_none=True)
-    elif isinstance(data, list):
-        if not all(isinstance(item, BaseModel) for item in data):
+
+    elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
+
+        data_list = list(data)
+
+        if not all(isinstance(item, BaseModel) for item in data_list):
+
             raise TypeError(
-                "All items in the list must be instances of Pydantic BaseModel"
+                "All items in the Sequence must be instances of Pydantic BaseModel"
             )
-        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
+
+        serialized = [
+            item.model_dump(mode="json", exclude_none=True) for item in data_list
+        ]
     else:
-        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
+        raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
     output = json.dumps(serialized)
 
@@ -52,15 +61,23 @@ def render_json(data: BaseModel | Sequence[BaseModel], console: Console):
 def render_yaml(data: BaseModel | Sequence[BaseModel], console: Console):
 
     if isinstance(data, BaseModel):
+
         serialized = data.model_dump(mode="json", exclude_none=True)
-    elif isinstance(data, list):
-        if not all(isinstance(item, BaseModel) for item in data):
+
+    elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
+
+        data_list = list(data)
+
+        if not all(isinstance(item, BaseModel) for item in data_list):
             raise TypeError(
-                "All items in the list must be instances of Pydantic BaseModel"
+                "All items in the Sequence must be instances of Pydantic BaseModel"
             )
-        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
+
+        serialized = [
+            item.model_dump(mode="json", exclude_none=True) for item in data_list
+        ]
     else:
-        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
+        raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
     output = yaml.safe_dump(
         serialized,
@@ -76,15 +93,24 @@ def render_table(
 ):
 
     if isinstance(data, BaseModel):
+
         data_list = [data]
-    elif isinstance(data, list):
-        if not all(isinstance(item, BaseModel) for item in data):
+
+    elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
+
+        data_list = list(data)
+
+        if not all(isinstance(item, BaseModel) for item in data_list):
+
             raise TypeError(
-                "All items in the list must be instances of Pydantic BaseModel"
+                "All items in the Sequence must be instances of Pydantic BaseModel"
             )
-        data_list = data
     else:
-        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
+        raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
+
+    if not data_list:
+        console.print("No results.")
+        return
 
     columns = list(data_list[0].model_dump(mode="json", exclude_none=True).keys())
 

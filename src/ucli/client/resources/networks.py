@@ -19,7 +19,13 @@ class NetworksResource:
     def list(self) -> Sequence[NetworkListModel]:
         response = self.client.request("GET", f"/sites/{self.site_id}/networks")
 
-        return [NetworkListModel.model_validate(item) for item in response.get("data")]
+        data = response.get("data", [])
+        if data is None:
+            data = []
+        if not isinstance(data, list):
+            raise TypeError(f"Expected list data for networks, got {type(data)}")
+
+        return [NetworkListModel.model_validate(item) for item in data]
 
     def get(self, network_id: UUID) -> NetworkGetModel:
         response = self.client.request(
