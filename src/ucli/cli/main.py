@@ -1,4 +1,5 @@
-from typing import Annotated
+import sys
+from typing import Annotated, Optional
 
 import typer
 from pydantic import HttpUrl, ValidationError
@@ -14,14 +15,16 @@ app = typer.Typer()
 def main(
     *,
     ctx: typer.Context,
-    api_key: Annotated[str, typer.Option(envvar="UCLI_API_KEY", help="Unifi API key")],
+    api_key: Annotated[
+        Optional[str], typer.Option(envvar="UCLI_API_KEY", help="Unifi API key")
+    ] = None,
     base_url: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             envvar="UCLI_BASE_URL",
             help="Base URL of the Unifi API in the form of https://hostname/",
         ),
-    ],
+    ] = None,
     verify_tls: Annotated[
         bool,
         typer.Option(
@@ -35,6 +38,12 @@ def main(
         typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="CLI output format"),
     ] = "json",
 ):
+
+    if ctx.resilient_parsing or any(arg in ("--help", "-h") for arg in sys.argv):
+        return
+
+    if api_key is None or base_url is None:
+        raise typer.BadParameter("api_key and base_url are required")
 
     try:
         client_options = ClientOptionsModel(
