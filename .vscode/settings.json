@@ -11,4 +11,6 @@
         "--profile",
         "black"
     ],
+    "chatgpt.commentCodeLensEnabled": false,
+    "chatgpt.openOnStartup": true,
 }

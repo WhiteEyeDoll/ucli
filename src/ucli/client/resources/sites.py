@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from ucli.client.models.site import SiteModel
+from ucli.client.models.sites import SiteModel
 from ucli.client.resources.networks import NetworksResource
 
 if TYPE_CHECKING:
