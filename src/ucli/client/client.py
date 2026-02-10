@@ -4,7 +4,7 @@ from typing import Optional, Self, Type
 
 import httpx
 
-from ucli.client.models.options import ClientOptionsModel
+from ucli.client.models.client import ClientOptionsModel
 from ucli.client.resources.sites import SitesResource
 
 

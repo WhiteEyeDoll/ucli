@@ -6,7 +6,7 @@ from pydantic import HttpUrl, ValidationError
 
 from ucli.cli.commands import networks, sites
 from ucli.cli.types import OutputFormat
-from ucli.client.models.options import ClientOptionsModel
+from ucli.client.models.client import ClientOptionsModel
 
 app = typer.Typer()
 
