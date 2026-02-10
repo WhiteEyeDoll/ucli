@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from ucli.client.models.networks import NetworkGetModel, NetworkListModel
+from ucli.client.models.network import Network
 
 if TYPE_CHECKING:
     from ucli.client.client import APIClientV1
@@ -16,14 +16,14 @@ class NetworksResource:
         self.site_id = site_id
         self.client = client
 
-    def list(self) -> Sequence[NetworkListModel]:
+    def list(self) -> Sequence[Network]:
         response = self.client.request("GET", f"/sites/{self.site_id}/networks")
 
-        return [NetworkListModel.model_validate(item) for item in response.get("data")]
+        return [Network.model_validate(item) for item in response.get("data")]
 
-    def get(self, network_id: UUID) -> NetworkGetModel:
+    def get(self, network_id: UUID) -> Network:
         response = self.client.request(
             "GET", f"/sites/{self.site_id}/networks/{network_id}"
         )
 
-        return NetworkGetModel.model_validate(response)
+        return Network.model_validate(response)

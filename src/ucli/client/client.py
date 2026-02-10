@@ -4,13 +4,13 @@ from typing import Optional, Self, Type
 
 import httpx
 
-from ucli.client.models.client import ClientOptionsModel
+from ucli.client.models.client import ClientOptions
 from ucli.client.resources.sites import SitesResource
 
 
 class APIClientV1:
 
-    def __init__(self, options: ClientOptionsModel):
+    def __init__(self, options: ClientOptions):
 
         self.options = options
 
@@ -65,6 +65,6 @@ class APIClientV1:
 
     @classmethod
     @cache
-    def get_client(cls, options: ClientOptionsModel) -> Self:
+    def get_client(cls, options: ClientOptions) -> Self:
 
         return cls(options)

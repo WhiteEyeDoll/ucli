@@ -6,7 +6,7 @@ from pydantic import HttpUrl, ValidationError
 
 from ucli.cli.commands import networks, sites
 from ucli.cli.types import OutputFormat
-from ucli.client.models.client import ClientOptionsModel
+from ucli.client.models.client import ClientOptions
 
 app = typer.Typer()
 
@@ -46,7 +46,7 @@ def main(
         raise typer.BadParameter("api_key and base_url are required")
 
     try:
-        client_options = ClientOptionsModel(
+        client_options = ClientOptions(
             base_url=HttpUrl(base_url),
             api_key=api_key,
             verify_tls=verify_tls,

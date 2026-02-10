@@ -1,7 +1,7 @@
 from pydantic import BaseModel, HttpUrl
 
 
-class ClientOptionsModel(BaseModel):
+class ClientOptions(BaseModel):
     base_url: HttpUrl
     api_key: str
     verify_tls: bool = True

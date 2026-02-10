@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from ucli.client.models.sites import SiteModel
+from ucli.client.models.site import Site
 from ucli.client.resources.networks import NetworksResource
 
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class SiteResource:
-    def __init__(self, model: SiteModel, client: APIClientV1):
+    def __init__(self, model: Site, client: APIClientV1):
         self.model = model
         self.client = client
         self.networks = NetworksResource(self.model.id, client)
@@ -31,7 +31,7 @@ class SitesResource:
     def __init__(self, client: APIClientV1):
         self.client = client
 
-    def list(self) -> Sequence[SiteModel]:
+    def list(self) -> Sequence[Site]:
         response = self.client.request("GET", "/sites")
 
         data = response.get("data", [])
@@ -40,7 +40,7 @@ class SitesResource:
         if not isinstance(data, list):
             raise TypeError(f"Expected list data for sites, got {type(data)}")
 
-        return [SiteModel.model_validate(item) for item in data]
+        return [Site.model_validate(item) for item in data]
 
     def get(self, site_id: UUID) -> SiteResource:
         for site in self.list():
