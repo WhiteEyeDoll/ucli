@@ -1,5 +1,5 @@
 import sys
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from pydantic import HttpUrl, ValidationError
@@ -16,10 +16,10 @@ def main(
     *,
     ctx: typer.Context,
     api_key: Annotated[
-        Optional[str], typer.Option(envvar="UCLI_API_KEY", help="Unifi API key")
+        str | None, typer.Option(envvar="UCLI_API_KEY", help="Unifi API key")
     ] = None,
     base_url: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             envvar="UCLI_BASE_URL",
             help="Base URL of the Unifi API in the form of https://hostname/",
