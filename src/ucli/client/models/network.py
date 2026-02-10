@@ -35,7 +35,6 @@ class IpAddressSelector(BaseModel):
     @model_validator(mode="after")
     def check_mutual_exclusion(self):
 
-        # ---- IP_ADDRESS_RANGE ----
         if self.type == "IP_ADDRESS":
             if self.value is None:
                 raise ValueError("type='IP_ADDRESS' requires 'value'")
@@ -43,7 +42,6 @@ class IpAddressSelector(BaseModel):
                 raise ValueError("type='IP_ADDRESS' forbids 'start'/'stop'")
             return self
 
-        # ---- IP_ADDRESS_RANGE ----
         if self.start is None or self.stop is None:
             raise ValueError("type='IP_ADDRESS_RANGE' requires both 'start' and 'stop'")
 
