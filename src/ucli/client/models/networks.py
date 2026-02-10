@@ -1,7 +1,7 @@
-from typing import Literal, Optional
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, IPvAnyAddress, IPvAnyNetwork, model_validator
+from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork, model_validator
 
 
 class NetworkMetadataModel(BaseModel):
@@ -17,8 +17,8 @@ class NetworkDhcpGuardingModel(BaseModel):
 class IpAddressRangeModel(BaseModel):
     # Unifi Network API lists these as required but does not currently return them.
     # Mark as optional to work around this bug.
-    start: Optional[IPvAnyAddress] = None
-    stop: Optional[IPvAnyAddress] = None
+    start: IPvAnyAddress | None = Field(default=None)
+    stop: IPvAnyAddress | None = Field(default=None)
 
 
 class PxeConfigurationModel(BaseModel):
@@ -28,9 +28,9 @@ class PxeConfigurationModel(BaseModel):
 
 class IpAddressSelectorModel(BaseModel):
     type: Literal["IP_ADDRESS", "IP_ADDRESS_RANGE"]
-    value: Optional[IPvAnyAddress] = None
-    start: Optional[IPvAnyAddress] = None
-    stop: Optional[IPvAnyAddress] = None
+    value: IPvAnyAddress | None = Field(default=None)
+    start: IPvAnyAddress | None = Field(default=None)
+    stop: IPvAnyAddress | None = Field(default=None)
 
     @model_validator(mode="after")
     def check_mutual_exclusion(self):
@@ -64,35 +64,35 @@ class IpAddressSelectorModel(BaseModel):
 class NatOutboundIpAddressConfigurationModel(BaseModel):
     type: Literal["AUTO", "STATIC"]
     wanInterfaceId: str
-    ipAddressSelectionMode: Optional[str] = None
-    ipAddressSelectors: Optional[IpAddressSelectorModel] = None
+    ipAddressSelectionMode: str | None = Field(default=None)
+    ipAddressSelectors: IpAddressSelectorModel | None = Field(default=None)
 
 
 class DhcpConfigurationModel(BaseModel):
     mode: Literal["SERVER", "RELAY"]
-    ipAddressRange: Optional[IpAddressRangeModel] = None
-    gatewayIpAddressOverride: Optional[IPvAnyAddress] = None
-    dnsServerIpAddressOverride: Optional[IPvAnyAddress] = None
-    leasetimeSeconds: Optional[int] = None
-    domainName: Optional[str] = None
-    pingConflictDetectionEnabled: Optional[bool] = None
-    pxeConfiguration: Optional[PxeConfigurationModel] = None
-    ntpServerIpAddress: Optional[list[IPvAnyAddress]] = None
-    option43Value: Optional[str] = None
-    tftpServerAddress: Optional[IPvAnyAddress] = None
-    timeOffsetSeconds: Optional[int] = None
-    wpadUrl: Optional[str] = None
-    winsServerIpAddresses: Optional[list[IPvAnyAddress]] = None
-    natOutboundIpAddressConfiguration: Optional[
-        NatOutboundIpAddressConfigurationModel
-    ] = None
+    ipAddressRange: IpAddressRangeModel | None = Field(default=None)
+    gatewayIpAddressOverride: IPvAnyAddress | None = Field(default=None)
+    dnsServerIpAddressOverride: IPvAnyAddress | None = Field(default=None)
+    leasetimeSeconds: int | None = Field(default=None)
+    domainName: str | None = Field(default=None)
+    pingConflictDetectionEnabled: bool | None = Field(default=None)
+    pxeConfiguration: PxeConfigurationModel | None = Field(default=None)
+    ntpServerIpAddress: list[IPvAnyAddress] | None = Field(default=None)
+    option43Value: str | None = Field(default=None)
+    tftpServerAddress: IPvAnyAddress | None = Field(default=None)
+    timeOffsetSeconds: int | None = Field(default=None)
+    wpadUrl: str | None = Field(default=None)
+    winsServerIpAddresses: list[IPvAnyAddress] | None = Field(default=None)
+    natOutboundIpAddressConfiguration: NatOutboundIpAddressConfigurationModel | None = (
+        Field(default=None)
+    )
 
 
 class Ipv4ConfigurationModel(BaseModel):
     autoScaleEnabled: bool
     hostIpAddress: IPvAnyAddress
     prefixLength: int
-    additionalHostIpSubnets: Optional[list[IPvAnyNetwork]] = None
+    additionalHostIpSubnets: list[IPvAnyNetwork] | None = Field(default=None)
     dhcpConfiguration: DhcpConfigurationModel
 
 
@@ -106,14 +106,14 @@ class NetworkBaseModel(BaseModel):
 
 
 class NetworkListModel(NetworkBaseModel):
-    deviceId: Optional[UUID] = None
+    deviceId: UUID | None = Field(default=None)
 
 
 class NetworkGetModel(NetworkBaseModel):
-    dhcpGuarding: Optional[NetworkDhcpGuardingModel] = None
-    isolationEnabled: Optional[bool] = None
-    cellularBackupEnabled: Optional[bool] = None
-    zoneId: Optional[UUID] = None
-    internetAccessEnabled: Optional[bool] = None
-    mdnsForwardingEnabled: Optional[bool] = None
-    ipv4Configuration: Optional[Ipv4ConfigurationModel] = None
+    dhcpGuarding: NetworkDhcpGuardingModel | None = Field(default=None)
+    isolationEnabled: bool | None = Field(default=None)
+    cellularBackupEnabled: bool | None = Field(default=None)
+    zoneId: UUID | None = Field(default=None)
+    internetAccessEnabled: bool | None = Field(default=None)
+    mdnsForwardingEnabled: bool | None = Field(default=None)
+    ipv4Configuration: Ipv4ConfigurationModel | None = Field(default=None)
