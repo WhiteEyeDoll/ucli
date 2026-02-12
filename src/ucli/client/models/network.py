@@ -124,7 +124,7 @@ class Ipv6ClientAddressAssignment(BaseModel):
 class Ipv6Configuration(BaseModel):
     interfaceType: Literal["PREFIX_DELEGATION", "STATIC"]
     clientAddressAssignment: Ipv6ClientAddressAssignment
-    routerAdertisement: RouterAdvertisement | None = Field(default=None)
+    routerAdvertisement: RouterAdvertisement | None = Field(default=None)
     dnsServerIpAddressOverride: list[IPvAnyAddress] | None = Field(default=None)
     additionalHostIpSubnets: list[IPvAnyNetwork] | None = Field(default=None)
     prefixDelegationWanInterfaceId: UUID | None = Field(default=None)
