@@ -94,7 +94,7 @@ def render_table(
 
     elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
 
-        data_list = list(data)
+        data_list = data
 
         if not all(isinstance(item, BaseModel) for item in data_list):
 
