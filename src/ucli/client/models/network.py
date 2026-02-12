@@ -4,11 +4,11 @@ from uuid import UUID
 from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork, model_validator
 
 
-class NetworkMetadata(BaseModel):
+class Metadata(BaseModel):
     origin: Literal["USER_DEFINED", "SYSTEM_DEFINED", "ORCHESTRATED"]
 
 
-class NetworkDhcpGuarding(BaseModel):
+class DhcpGuarding(BaseModel):
     # Bug in Unifi Network API.
     # Sometimes empty strings are returned in addtion to IP addresses.
     trustedDhcpServerIpAddresses: list[IPvAnyAddress | str]
@@ -33,7 +33,7 @@ class IpAddressSelector(BaseModel):
     stop: IPvAnyAddress | None = Field(default=None)
 
     @model_validator(mode="after")
-    def check_mutual_exclusion(self):
+    def validate_configuration(self):
 
         if self.type == "IP_ADDRESS":
             if self.value is None:
@@ -54,6 +54,10 @@ class IpAddressSelector(BaseModel):
         return self
 
 
+class RouterAdvertisement(BaseModel):
+    priority: str
+
+
 class NatOutboundIpAddressConfiguration(BaseModel):
     type: Literal["AUTO", "STATIC"]
     wanInterfaceId: str
@@ -61,7 +65,7 @@ class NatOutboundIpAddressConfiguration(BaseModel):
     ipAddressSelectors: IpAddressSelector | None = Field(default=None)
 
 
-class DhcpConfiguration(BaseModel):
+class Ipv4DhcpConfiguration(BaseModel):
     mode: Literal["SERVER", "RELAY"]
     ipAddressRange: IpAddressRange | None = Field(default=None)
     gatewayIpAddressOverride: IPvAnyAddress | None = Field(default=None)
@@ -86,21 +90,105 @@ class Ipv4Configuration(BaseModel):
     hostIpAddress: IPvAnyAddress
     prefixLength: int
     additionalHostIpSubnets: list[IPvAnyNetwork] | None = Field(default=None)
-    dhcpConfiguration: DhcpConfiguration
+    dhcpConfiguration: Ipv4DhcpConfiguration
+
+
+class Ipv6AddressSuffixRange(BaseModel):
+    start: IPvAnyAddress
+    stop: IPvAnyAddress
+
+    @model_validator(mode="after")
+    def validate_configuration(self):
+
+        if self.start is None or self.stop is None:
+            raise ValueError(
+                "type='Ipv6AddressSuffixRange' requires both 'start' and 'stop'"
+            )
+
+        if int(self.start) > int(self.stop):
+            raise ValueError("'start' must be <= 'stop'")
+
+        return self
+
+
+class Ipv6DhcpConfiguration(BaseModel):
+    ipAddressSuffixRange: Ipv6AddressSuffixRange
+    leaseTimeSeconds: int
+
+
+class Ipv6ClientAddressAssignment(BaseModel):
+    DhcpConfiguration: Ipv6DhcpConfiguration
+    slaacEnabled: bool
+
+
+class Ipv6Configuration(BaseModel):
+    interfaceType: Literal["PREFIX_DELEGATION", "STATIC"]
+    clientAddressAssignment: Ipv6ClientAddressAssignment
+    routerAdertisement: RouterAdvertisement | None = Field(default=None)
+    dnsServerIpAddressOverride: list[IPvAnyAddress] | None = Field(default=None)
+    additionalHostIpSubnets: list[IPvAnyNetwork] | None = Field(default=None)
+    prefixDelegationWanInterfaceId: UUID | None = Field(default=None)
+
+
+class NetworkReferenceResourceDetail(BaseModel):
+    referenceId: UUID
+
+
+class NetworkReferenceResource(BaseModel):
+    resourceType: str
+    referenceCount: int
+    refereces: NetworkReferenceResourceDetail | None = Field(default=None)
+
+
+class NetworkReference(BaseModel):
+    referenceResources: NetworkReferenceResource
 
 
 class Network(BaseModel):
-    name: str
-    vlanId: int
-    enabled: bool
-    id: UUID
     management: Literal["UNMANAGED", "GATEWAY", "SWITCH"]
-    metadata: NetworkMetadata
-    deviceId: UUID | None = Field(default=None)
-    dhcpGuarding: NetworkDhcpGuarding | None = Field(default=None)
+    id: UUID
+    name: str
+    enabled: bool
+    vlanId: int
+    metadata: Metadata
+    dhcpGuarding: DhcpGuarding | None = Field(default=None)
     isolationEnabled: bool | None = Field(default=None)
+    cellularBackupEnabled: bool | None = Field(default=None)
+    deviceId: UUID | None = Field(default=None)
+    zoneId: UUID | None = Field(default=None)
+    internetAccessEnabled: bool | None = Field(default=None)
+    mdnsForwardingEnabled: bool | None = Field(default=None)
+    ipv4Configuration: Ipv4Configuration | None = Field(default=None)
+    ipv6Configuration: Ipv6Configuration | None = Field(default=None)
+
+
+class NetworkCreate(BaseModel):
+    management: Literal["UNMANAGED", "GATEWAY", "SWITCH"]
+    name: str
+    enabled: bool
+    vlanId: int
+    dhcpGuarding: DhcpGuarding | None = Field(default=None)
+    isolationEnabled: bool | None = Field(default=None)
+    deviceId: UUID | None = Field(default=None)
     cellularBackupEnabled: bool | None = Field(default=None)
     zoneId: UUID | None = Field(default=None)
     internetAccessEnabled: bool | None = Field(default=None)
     mdnsForwardingEnabled: bool | None = Field(default=None)
     ipv4Configuration: Ipv4Configuration | None = Field(default=None)
+    ipv6Configuration: Ipv6Configuration | None = Field(default=None)
+
+
+class NetworkUpdate(BaseModel):
+    management: Literal["UNMANAGED", "GATEWAY", "SWITCH"]
+    name: str
+    enabled: bool
+    vlanId: int
+    dhcpGuarding: DhcpGuarding | None = Field(default=None)
+    isolationEnabled: bool | None = Field(default=None)
+    deviceId: UUID | None = Field(default=None)
+    cellularBackupEnabled: bool | None = Field(default=None)
+    zoneId: UUID | None = Field(default=None)
+    internetAccessEnabled: bool | None = Field(default=None)
+    mdnsForwardingEnabled: bool | None = Field(default=None)
+    ipv4Configuration: Ipv4Configuration | None = Field(default=None)
+    ipv6Configuration: Ipv6Configuration | None = Field(default=None)

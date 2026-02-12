@@ -30,17 +30,26 @@ class APIClientV1:
         response = self._client.request(method, path, **kwargs)
         response.raise_for_status()
 
-        try:
-            return response.json()
-        except ValueError as error:
-            content_type = response.headers.get("Content-Type", "")
-            body = response.text
-            snippet = body[:200] if body else ""
-            raise ValueError(
-                "Expected JSON response but received non-JSON body. "
-                f"status={response.status_code} content_type={content_type!r} "
-                f"body_snippet={snippet!r}"
-            ) from error
+        # 204 No Content is always empty by definition
+        if response.status_code == 204:
+            return None
+
+        if not response.content:
+            return None
+
+        content_type = response.headers.get("Content-Type", "")
+
+        if "application/json" in content_type:
+            try:
+                return response.json()
+            except ValueError as error:
+                body = response.text
+                snippet = body[:200] if body else ""
+                raise ValueError(
+                    "Response declared JSON but could not be decoded. "
+                    f"status={response.status_code} content_type={content_type!r} "
+                    f"body_snippet={snippet!r}"
+                ) from error
 
     def close(self) -> None:
         self._client.close()

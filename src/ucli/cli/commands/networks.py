@@ -3,6 +3,7 @@ from uuid import UUID
 
 import typer
 
+from ucli.cli.console import console
 from ucli.cli.render import render
 from ucli.cli.site_scoped import site_scoped_app
 from ucli.client.client import APIClientV1
@@ -16,9 +17,9 @@ def networks_list(ctx: typer.Context):
     with APIClientV1(ctx.obj["client_options"]) as client:
         site = client.sites.get(ctx.obj["site_id"])
 
-        data = site.networks.list()
+        network_list = site.networks.list()
 
-        render(data, output_format=ctx.obj["output_format"])
+        render(network_list, output_format=ctx.obj["output_format"])
 
 
 @app.command("get")
@@ -30,6 +31,27 @@ def networks_get(
     with APIClientV1(ctx.obj["client_options"]) as client:
         site = client.sites.get(ctx.obj["site_id"])
 
-        data = site.networks.get(network_id)
+        network = site.networks.get(network_id)
 
-        render(data, output_format=ctx.obj["output_format"])
+        render(network, output_format=ctx.obj["output_format"])
+
+
+@app.command("delete")
+def networks_delete(
+    ctx: typer.Context,
+    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
+):
+
+    with APIClientV1(ctx.obj["client_options"]) as client:
+        site = client.sites.get(ctx.obj["site_id"])
+
+        network = site.networks.get(network_id)
+
+        render(network, output_format=ctx.obj["output_format"])
+
+        delete = typer.confirm("Delete this network?")
+        if not delete:
+            raise typer.Abort()
+        console.print("Deleting network...")
+        site.networks.delete(network_id)
+        console.print("Done.")
