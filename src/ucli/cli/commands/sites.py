@@ -10,6 +10,7 @@ app = typer.Typer()
 def sites_list(ctx: typer.Context):
 
     with APIClientV1(ctx.obj["client_options"]) as client:
-        data = client.sites.list()
 
-        render(data, output_format=ctx.obj["output_format"])
+        site_list = client.sites.list()
+
+        render(site_list, output_format=ctx.obj["output_format"])
