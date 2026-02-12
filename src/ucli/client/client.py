@@ -32,10 +32,10 @@ class APIClientV1:
 
         # 204 No Content is always empty by definition
         if response.status_code == 204:
-            return None
+            return {}
 
         if not response.content:
-            return None
+            return {}
 
         content_type = response.headers.get("Content-Type", "")
 
@@ -50,6 +50,8 @@ class APIClientV1:
                     f"status={response.status_code} content_type={content_type!r} "
                     f"body_snippet={snippet!r}"
                 ) from error
+
+        return {}
 
     def close(self) -> None:
         self._client.close()

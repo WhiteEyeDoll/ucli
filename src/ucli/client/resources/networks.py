@@ -24,7 +24,9 @@ class NetworksResource:
     def list(self) -> Sequence[Network]:
         response = self.client.request("GET", f"/sites/{self.site_id}/networks")
 
-        network_list = [Network.model_validate(item) for item in response.get("data")]
+        network_list = [
+            Network.model_validate(item) for item in response.get("data", [])
+        ]
 
         return network_list
 
@@ -79,7 +81,7 @@ class NetworksResource:
 
         network_reference_list = [
             NetworkReferenceResource.model_validate(item)
-            for item in response.get("referenceResources")
+            for item in response.get("referenceResources", [])
         ]
 
         return network_reference_list
