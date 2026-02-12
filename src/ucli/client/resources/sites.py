@@ -31,7 +31,7 @@ class SitesResource:
     def __init__(self, client: APIClientV1):
         self.client = client
 
-    def list(self) -> Sequence[Site]:
+    def list(self) -> list[Site]:
         response = self.client.request("GET", "/sites")
 
         data = response.get("data", [])

@@ -21,7 +21,7 @@ class NetworksResource:
         self.site_id = site_id
         self.client = client
 
-    def list(self) -> Sequence[Network]:
+    def list(self) -> list[Network]:
         response = self.client.request("GET", f"/sites/{self.site_id}/networks")
 
         network_list = [
@@ -74,7 +74,7 @@ class NetworksResource:
 
         return response
 
-    def get_references(self, network_id: UUID) -> Sequence[NetworkReferenceResource]:
+    def get_references(self, network_id: UUID) -> list[NetworkReferenceResource]:
         response = self.client.request(
             "GET", f"/sites/{self.site_id}/networks/{network_id}/references"
         )
