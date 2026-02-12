@@ -25,7 +25,7 @@ def networks_list(ctx: typer.Context):
 @app.command("get")
 def networks_get(
     ctx: typer.Context,
-    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
+    network_id: Annotated[UUID, typer.Argument(help="Network ID")],
 ):
 
     with APIClientV1(ctx.obj["client_options"]) as client:
@@ -39,7 +39,7 @@ def networks_get(
 @app.command("delete")
 def networks_delete(
     ctx: typer.Context,
-    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
+    network_id: Annotated[UUID, typer.Argument(help="Network ID")],
 ):
 
     with APIClientV1(ctx.obj["client_options"]) as client:
@@ -60,7 +60,7 @@ def networks_delete(
 @app.command("references")
 def networks_get_references(
     ctx: typer.Context,
-    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
+    network_id: Annotated[UUID, typer.Argument(help="Network ID")],
 ):
 
     with APIClientV1(ctx.obj["client_options"]) as client:
