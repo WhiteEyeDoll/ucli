@@ -117,7 +117,7 @@ class Ipv6DhcpConfiguration(BaseModel):
 
 
 class Ipv6ClientAddressAssignment(BaseModel):
-    DhcpConfiguration: Ipv6DhcpConfiguration
+    dhcpConfiguration: Ipv6DhcpConfiguration
     slaacEnabled: bool
 
 
