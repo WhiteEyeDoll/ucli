@@ -96,6 +96,8 @@ def render_table(
                 "All items in the Sequence must be instances of Pydantic BaseModel"
             )
 
+        data = list(data)
+
     else:
         raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
@@ -103,7 +105,7 @@ def render_table(
         console.print("No results.")
         return
 
-    columns = list(data[0].model_dump(mode="json", exclude_none=True).keys())
+    columns = data[0].model_dump(mode="json").keys()
 
     table = Table(show_header=True, header_style="bold magenta", expand=True)
 

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -24,9 +23,13 @@ class NetworksResource:
     def list(self) -> list[Network]:
         response = self.client.request("GET", f"/sites/{self.site_id}/networks")
 
-        network_list = [
-            Network.model_validate(item) for item in response.get("data", [])
-        ]
+        data = response.get("data", [])
+        if data is None:
+            data = []
+        if not isinstance(data, list):
+            raise TypeError(f"Expected list data for networks, got {type(data)}")
+
+        network_list = [Network.model_validate(item) for item in data]
 
         return network_list
 
@@ -79,9 +82,16 @@ class NetworksResource:
             "GET", f"/sites/{self.site_id}/networks/{network_id}/references"
         )
 
+        data = response.get("referenceResources", [])
+        if data is None:
+            data = []
+        if not isinstance(data, list):
+            raise TypeError(
+                f"Expected list data for network references, got {type(data)}"
+            )
+
         network_reference_list = [
-            NetworkReferenceResource.model_validate(item)
-            for item in response.get("referenceResources", [])
+            NetworkReferenceResource.model_validate(item) for item in data
         ]
 
         return network_reference_list
