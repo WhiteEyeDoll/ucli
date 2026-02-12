@@ -21,7 +21,7 @@ class APIClientV1:
         self._client = httpx.Client(
             base_url=base_url,
             verify=self.options.verify_tls,
-            timeout=10.0,
+            timeout=self.options.timeout,
             headers={"X-API-KEY": self.options.api_key},
         )
 

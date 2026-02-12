@@ -16,27 +16,30 @@ def main(
     *,
     ctx: typer.Context,
     api_key: Annotated[
-        str | None, typer.Option(envvar="UCLI_API_KEY", help="Unifi API key")
+        str | None, typer.Option(envvar="UCLI_API_KEY", help="Unifi API key.")
     ] = None,
     base_url: Annotated[
         str | None,
         typer.Option(
             envvar="UCLI_BASE_URL",
-            help="Base URL of the Unifi API in the form of https://hostname/",
+            help="Base URL of the Unifi API in the form of https://hostname/.",
         ),
     ] = None,
     verify_tls: Annotated[
         bool,
         typer.Option(
-            "--verify-tls/--no-verify-tls",
             envvar="UCLI_VERIFY_TLS",
-            help="Set TLS certificate verification",
+            help="Set TLS certificate verification.",
         ),
     ] = True,
     output_format: Annotated[
         OutputFormat,
-        typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="CLI output format"),
+        typer.Option(envvar="UCLI_OUTPUT_FORMAT", help="CLI output format."),
     ] = "json",
+    timeout: Annotated[
+        float,
+        typer.Option(envvar="UCLI_TIMEOUT", help="Request timeout limit in seconds."),
+    ] = 10.0,
 ):
 
     if ctx.resilient_parsing or any(arg in ("--help", "-h") for arg in sys.argv):
@@ -50,6 +53,7 @@ def main(
             base_url=HttpUrl(base_url),
             api_key=api_key,
             verify_tls=verify_tls,
+            timeout=timeout,
         )
     except ValidationError as error:
         raise typer.BadParameter(f"Invalid client options:\n{error}") from error
