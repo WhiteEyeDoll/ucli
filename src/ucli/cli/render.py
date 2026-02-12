@@ -83,10 +83,11 @@ def render_yaml(data: BaseModel | Sequence[BaseModel], console: Console):
 def render_table(
     data: BaseModel | Sequence[BaseModel], console: Console, max_depth: int = 3
 ):
+    models: list[BaseModel]
 
     if isinstance(data, BaseModel):
 
-        data = [data]
+        models = [data]
 
     elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
 
@@ -96,27 +97,31 @@ def render_table(
                 "All items in the Sequence must be instances of Pydantic BaseModel"
             )
 
-        data = list(data)
+        models = list(data)
 
     else:
         raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
-    if not data:
+    if not models:
         console.print("No results.")
         return
 
-    columns = data[0].model_dump(mode="json").keys()
+    rows = [item.model_dump(mode="json", exclude_none=True) for item in models]
+    columns = list(dict.fromkeys(key for row in rows for key in row.keys()))
 
     table = Table(show_header=True, header_style="bold magenta", expand=True)
 
     for col in columns:
         table.add_column(col, no_wrap=False)
 
-    for item in data:
-        item_serialized = item.model_dump(mode="json", exclude_none=True)
+    for item_serialized in rows:
         table.add_row(
             *(
-                _stringify_nested(item_serialized.get(col), max_depth=max_depth)
+                (
+                    ""
+                    if col not in item_serialized
+                    else _stringify_nested(item_serialized[col], max_depth=max_depth)
+                )
                 for col in columns
             )
         )
