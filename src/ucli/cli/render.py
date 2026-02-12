@@ -39,17 +39,13 @@ def render_json(data: BaseModel | Sequence[BaseModel], console: Console):
 
     elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
 
-        data_list = list(data)
-
-        if not all(isinstance(item, BaseModel) for item in data_list):
+        if not all(isinstance(item, BaseModel) for item in data):
 
             raise TypeError(
                 "All items in the Sequence must be instances of Pydantic BaseModel"
             )
 
-        serialized = [
-            item.model_dump(mode="json", exclude_none=True) for item in data_list
-        ]
+        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
     else:
         raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
