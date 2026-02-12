@@ -62,16 +62,12 @@ def render_yaml(data: BaseModel | Sequence[BaseModel], console: Console):
 
     elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
 
-        data_list = list(data)
-
-        if not all(isinstance(item, BaseModel) for item in data_list):
+        if not all(isinstance(item, BaseModel) for item in data):
             raise TypeError(
                 "All items in the Sequence must be instances of Pydantic BaseModel"
             )
 
-        serialized = [
-            item.model_dump(mode="json", exclude_none=True) for item in data_list
-        ]
+        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
     else:
         raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
@@ -90,7 +86,7 @@ def render_table(
 
     if isinstance(data, BaseModel):
 
-        data_list = [data]
+        data = [data]
 
     elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
 
@@ -100,23 +96,21 @@ def render_table(
                 "All items in the Sequence must be instances of Pydantic BaseModel"
             )
 
-        data_list = data
-
     else:
         raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
-    if not data_list:
+    if not data:
         console.print("No results.")
         return
 
-    columns = list(data_list[0].model_dump(mode="json", exclude_none=True).keys())
+    columns = list(data[0].model_dump(mode="json", exclude_none=True).keys())
 
     table = Table(show_header=True, header_style="bold magenta", expand=True)
 
     for col in columns:
         table.add_column(col, no_wrap=False)
 
-    for item in data_list:
+    for item in data:
         item_serialized = item.model_dump(mode="json", exclude_none=True)
         table.add_row(
             *(
