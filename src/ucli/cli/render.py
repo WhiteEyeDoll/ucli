@@ -10,6 +10,22 @@ from rich.table import Table
 from ucli.cli.console import console as default_console
 from ucli.cli.types import OutputFormat
 
+RenderData = BaseModel | Sequence[BaseModel]
+
+
+def _coerce_models(data: RenderData) -> tuple[list[BaseModel], bool]:
+    if isinstance(data, BaseModel):
+        return [data], True
+
+    if isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
+        if not all(isinstance(item, BaseModel) for item in data):
+            raise TypeError(
+                "All items in the Sequence must be instances of Pydantic BaseModel"
+            )
+        return list(data), False
+
+    raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
+
 
 def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
     if depth > max_depth:
@@ -20,7 +36,7 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
         for k, v in val.items():
             sub = _stringify_nested(v, depth + 1, max_depth)
             if isinstance(v, (dict, list)):
-                lines.append(f"{k}:\n  {sub.replace("\n", "\n  ")}")
+                lines.append(f"{k}:\n  {sub.replace('\n', '\n  ')}")
             else:
                 lines.append(f"{k}: {v}")
         return "\n".join(lines)
@@ -31,36 +47,26 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
     return str(val)
 
 
-def render_json(data: BaseModel | Sequence[BaseModel], console: Console):
+def render_json(data: RenderData, console: Console):
+    models, is_single = _coerce_models(data)
 
-    if isinstance(data, BaseModel):
-        serialized = data.model_dump(mode="json", exclude_none=True)
-    elif isinstance(data, list):
-        if not all(isinstance(item, BaseModel) for item in data):
-            raise TypeError(
-                "All items in the list must be instances of Pydantic BaseModel"
-            )
-        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
-    else:
-        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
+    serialized_items = [
+        item.model_dump(mode="json", exclude_none=True) for item in models
+    ]
+    serialized = serialized_items[0] if is_single else serialized_items
 
     output = json.dumps(serialized)
 
     console.print_json(output)
 
 
-def render_yaml(data: BaseModel | Sequence[BaseModel], console: Console):
+def render_yaml(data: RenderData, console: Console):
+    models, is_single = _coerce_models(data)
 
-    if isinstance(data, BaseModel):
-        serialized = data.model_dump(mode="json", exclude_none=True)
-    elif isinstance(data, list):
-        if not all(isinstance(item, BaseModel) for item in data):
-            raise TypeError(
-                "All items in the list must be instances of Pydantic BaseModel"
-            )
-        serialized = [item.model_dump(mode="json", exclude_none=True) for item in data]
-    else:
-        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
+    serialized_items = [
+        item.model_dump(mode="json", exclude_none=True) for item in models
+    ]
+    serialized = serialized_items[0] if is_single else serialized_items
 
     output = yaml.safe_dump(
         serialized,
@@ -71,33 +77,29 @@ def render_yaml(data: BaseModel | Sequence[BaseModel], console: Console):
     console.print(output)
 
 
-def render_table(
-    data: BaseModel | Sequence[BaseModel], console: Console, max_depth: int = 3
-):
+def render_table(data: RenderData, console: Console, max_depth: int = 3):
+    models, _ = _coerce_models(data)
 
-    if isinstance(data, BaseModel):
-        data_list = [data]
-    elif isinstance(data, list):
-        if not all(isinstance(item, BaseModel) for item in data):
-            raise TypeError(
-                "All items in the list must be instances of Pydantic BaseModel"
-            )
-        data_list = data
-    else:
-        raise TypeError(f"Expected BaseModel or list[BaseModel], got {type(data)}")
+    if not models:
+        console.print("No results.")
+        return
 
-    columns = list(data_list[0].model_dump(mode="json", exclude_none=True).keys())
+    rows = [item.model_dump(mode="json", exclude_none=True) for item in models]
+    columns = list(dict.fromkeys(key for row in rows for key in row.keys()))
 
     table = Table(show_header=True, header_style="bold magenta", expand=True)
 
     for col in columns:
         table.add_column(col, no_wrap=False)
 
-    for item in data_list:
-        item_serialized = item.model_dump(mode="json", exclude_none=True)
+    for item_serialized in rows:
         table.add_row(
             *(
-                _stringify_nested(item_serialized.get(col), max_depth=max_depth)
+                (
+                    ""
+                    if col not in item_serialized
+                    else _stringify_nested(item_serialized[col], max_depth=max_depth)
+                )
                 for col in columns
             )
         )
@@ -106,7 +108,7 @@ def render_table(
 
 
 def render(
-    data: BaseModel | Sequence[BaseModel],
+    data: RenderData,
     output_format: OutputFormat,
     console: Console = default_console,
     max_depth: int = 3,

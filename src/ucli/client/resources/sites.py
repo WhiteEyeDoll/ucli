@@ -1,18 +1,17 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from ucli.client.models.site import SiteModel
-from ucli.client.resources.network import NetworksResource
+from ucli.client.models.site import Site
+from ucli.client.resources.networks import NetworksResource
 
 if TYPE_CHECKING:
     from ucli.client.client import APIClientV1
 
 
 class SiteResource:
-    def __init__(self, model: SiteModel, client: APIClientV1):
+    def __init__(self, model: Site, client: APIClientV1):
         self.model = model
         self.client = client
         self.networks = NetworksResource(self.model.id, client)
@@ -31,13 +30,19 @@ class SitesResource:
     def __init__(self, client: APIClientV1):
         self.client = client
 
-    def list(self) -> Sequence[SiteModel]:
+    def list(self) -> list[Site]:
         response = self.client.request("GET", "/sites")
 
-        return [SiteModel.model_validate(item) for item in response.get("data")]
+        data = response.get("data", [])
+        if data is None:
+            data = []
+        if not isinstance(data, list):
+            raise TypeError(f"Expected list data for sites, got {type(data)}")
+
+        return [Site.model_validate(item) for item in data]
 
     def get(self, site_id: UUID) -> SiteResource:
         for site in self.list():
             if site.id == site_id:
-                return SiteResource(SiteModel.model_validate(site), self.client)
+                return SiteResource(site, self.client)
         raise ValueError(f"No site found with id {site_id}")
