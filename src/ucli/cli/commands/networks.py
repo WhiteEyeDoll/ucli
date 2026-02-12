@@ -55,3 +55,17 @@ def networks_delete(
         console.print("Deleting network...")
         site.networks.delete(network_id)
         console.print("Done.")
+
+
+@app.command("references")
+def networks_get_references(
+    ctx: typer.Context,
+    network_id: Annotated[UUID, typer.Option("--id", help="Network ID")],
+):
+
+    with APIClientV1(ctx.obj["client_options"]) as client:
+        site = client.sites.get(ctx.obj["site_id"])
+
+        network_references = site.networks.get_references(network_id)
+
+        render(network_references, output_format=ctx.obj["output_format"])

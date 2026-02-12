@@ -137,11 +137,7 @@ class NetworkReferenceResourceDetail(BaseModel):
 class NetworkReferenceResource(BaseModel):
     resourceType: str
     referenceCount: int
-    refereces: NetworkReferenceResourceDetail | None = Field(default=None)
-
-
-class NetworkReference(BaseModel):
-    referenceResources: NetworkReferenceResource
+    references: list[NetworkReferenceResourceDetail] | None = Field(default=None)
 
 
 class Network(BaseModel):

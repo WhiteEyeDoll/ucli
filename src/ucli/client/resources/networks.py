@@ -76,7 +76,7 @@ class NetworksResource:
 
     def get_references(self, network_id: UUID) -> Sequence[NetworkReferenceResource]:
         response = self.client.request(
-            "GET", f"/sites/{self.site_id}/{network_id}/networks/references"
+            "GET", f"/sites/{self.site_id}/networks/{network_id}/references"
         )
 
         network_reference_list = [
