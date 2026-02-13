@@ -1,7 +1,14 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, IPvAnyAddress, IPvAnyNetwork, model_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    IPvAnyAddress,
+    IPvAnyNetwork,
+    field_validator,
+    model_validator,
+)
 
 
 class Metadata(BaseModel):
@@ -9,16 +16,27 @@ class Metadata(BaseModel):
 
 
 class DhcpGuarding(BaseModel):
+    trustedDhcpServerIpAddresses: list[IPvAnyAddress]
+
     # Bug in Unifi Network API.
     # Sometimes empty strings are returned in addtion to IP addresses.
-    trustedDhcpServerIpAddresses: list[IPvAnyAddress | str]
+    # Remove empty strings before validating given values.
+
+    @field_validator("trustedDhcpServerIpAddresses", mode="before")
+    @classmethod
+    def remove_empty_strings(cls, value):
+        if isinstance(value, list):
+            return [
+                item
+                for item in value
+                if not (isinstance(item, str) and item.strip() == "")
+            ]
+        return value
 
 
 class IpAddressRange(BaseModel):
-    # Unifi Network API lists these as required but does not currently return them.
-    # Mark as optional to work around this bug.
-    start: IPvAnyAddress | None = Field(default=None)
-    stop: IPvAnyAddress | None = Field(default=None)
+    start: IPvAnyAddress
+    stop: IPvAnyAddress
 
 
 class PxeConfiguration(BaseModel):
