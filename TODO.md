@@ -1,6 +1,6 @@
-## Feature status
+# Feature status
 
-### API client
+## API client
 
 #### Data models
 
@@ -44,6 +44,9 @@ _TBD_
 ##### Access Control (ACL Rules)
 _TBD_
 
+##### DNS Policies
+_TBD_
+
 ##### Traffic Matching Lists
 _TBD_
 
@@ -54,8 +57,9 @@ _TBD_
 
 - [ ] filtering
 - [ ] pagination
+- [ ] support for external use of the client
 
-### CLI
+## CLI
 
 #### `sites` command
 - [x] list
@@ -66,7 +70,7 @@ _TBD_
 - [x] get
 - [ ] create
 - [x] delete
-- [ ] edit
+- [ ] edit (update)
 - [x] get references
 
 #### Output
@@ -78,7 +82,22 @@ _TBD_
 #### Other
 
 - [ ] filtering options
+- [ ] editor based editing for update operations
 
 ### TUI
 
 _TBD_
+
+### Tests
+_TBD_
+
+### PR checks
+- [ ] formatting
+- [ ] linting
+- [ ] type checks
+
+### Builds
+_TBD_
+
+### Documentation
+- [ ] README content
