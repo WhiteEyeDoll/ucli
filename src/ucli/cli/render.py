@@ -29,28 +29,53 @@ def _coerce_models(data: RenderData) -> tuple[list[BaseModel], bool]:
     raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
 
 
-def _sort_models(models: Sequence[BaseModel], sort_by: str) -> list[BaseModel]:
-    model_type = type(models[0]) if models else None
-    if model_type and sort_by not in model_type.model_fields:
+def _get_nested_value(source: Any, field_path: str) -> Any:
+    value: Any = source
+
+    for field in field_path.split("."):
+        if isinstance(value, BaseModel):
+            if field not in type(value).model_fields:
+                return None
+            value = getattr(value, field, None)
+        elif isinstance(value, dict):
+            value = value.get(field)
+        else:
+            return None
+
+    return value
+
+
+def _sort_models(models: list[BaseModel], sort_by: str) -> list[BaseModel]:
+    values = [_get_nested_value(model, sort_by) for model in models]
+    if values and all(value is None for value in values):
         raise ValueError(f"Unknown sort field: {sort_by}")
 
-    def key(model: BaseModel):
-        value = getattr(model, sort_by, None)
+    def sort_key(model: BaseModel) -> tuple[bool, Any]:
+        value = _get_nested_value(model, sort_by)
         if isinstance(value, str):
             value = value.casefold()
-        return (value is None, value)  # None values last
+        return (value is None, value)
 
-    return sorted(models, key=key)
+    try:
+        return sorted(models, key=sort_key)
+    except TypeError as error:
+        raise ValueError(
+            f"Cannot sort by '{sort_by}': values are not mutually comparable"
+        ) from error
 
 
-def _prepare_payload(data: RenderData, sort_by: str | None = None) -> RenderPayload:
+def _prepare_items(
+    data: RenderData, sort_by: str | None = None
+) -> tuple[list[SerializedItem], bool]:
+
     models, is_single = _coerce_models(data)
 
-    if sort_by and len(models) > 1:
+    if sort_by:
         models = _sort_models(models, sort_by)
 
-    items = [model.model_dump(mode="json", exclude_none=True) for model in models]
-    return items[0] if is_single else items
+    items = [m.model_dump(mode="json", exclude_none=True) for m in models]
+
+    return items, is_single
 
 
 def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
@@ -89,7 +114,11 @@ def render_yaml(payload: RenderPayload, console: Console):
     console.print(Syntax(code=yaml_text, lexer="yaml", background_color="default"))
 
 
-def render_table(rows: Sequence[SerializedItem], console: Console):
+def render_table(rows: Sequence[SerializedItem], console: Console, max_depth: int = 3):
+
+    if not rows:
+        console.print("No results.")
+        return
 
     columns = list(dict.fromkeys(key for row in rows for key in row.keys()))
 
@@ -104,7 +133,7 @@ def render_table(rows: Sequence[SerializedItem], console: Console):
                 (
                     ""
                     if col not in item_serialized
-                    else _stringify_nested(item_serialized[col], max_depth=3)
+                    else _stringify_nested(item_serialized[col], max_depth=max_depth)
                 )
                 for col in columns
             )
@@ -119,23 +148,15 @@ def render(
     sort_by: str | None = None,
     console: Console = default_console,
 ):
-    models, is_single = _coerce_models(data)
-
-    if sort_by and len(models) > 1:
-        models = _sort_models(models, sort_by)
+    items, is_single = _prepare_items(data=data, sort_by=sort_by)
 
     match output_format:
 
         case "json":
-            items = [m.model_dump(mode="json", exclude_none=True) for m in models]
             payload = items[0] if is_single else items
             render_json(payload, console)
         case "yaml":
-            items = [m.model_dump(mode="json", exclude_none=True) for m in models]
             payload = items[0] if is_single else items
             render_yaml(payload, console)
         case "table":
-            rows = [m.model_dump(mode="json", exclude_none=True) for m in models]
-            render_table(rows, console)
-        case _:
-            raise ValueError(f"Unknown format: {output_format}")
+            render_table(rows=items, console=console, max_depth=3)
