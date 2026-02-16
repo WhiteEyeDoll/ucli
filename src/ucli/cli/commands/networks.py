@@ -16,7 +16,9 @@ def networks_list(
     ctx: typer.Context,
     sort_by: Annotated[
         str | None,
-        typer.Option(help="Sort results by field name (e.g. vlanId). Case-sensitive."),
+        typer.Option(
+            help="Sort results by field path (for example: vlanId or origin.metadata)."
+        ),
     ] = None,
 ):
 
