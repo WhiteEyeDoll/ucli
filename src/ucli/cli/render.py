@@ -46,18 +46,19 @@ def _get_nested_value(source: Any, field_path: str) -> Any:
 
 
 def _sort_models(models: list[BaseModel], sort_by: str) -> list[BaseModel]:
-    values = [_get_nested_value(model, sort_by) for model in models]
-    if values and all(value is None for value in values):
+    models_with_value = [(model, _get_nested_value(model, sort_by)) for model in models]
+    if models_with_value and all(value is None for _, value in models_with_value):
         raise ValueError(f"Unknown sort field: {sort_by}")
 
-    def sort_key(model: BaseModel) -> tuple[bool, Any]:
-        value = _get_nested_value(model, sort_by)
+    def sort_key(item: tuple[BaseModel, Any]) -> tuple[bool, Any]:
+        _, value = item
         if isinstance(value, str):
             value = value.casefold()
         return (value is None, value)
 
     try:
-        return sorted(models, key=sort_key)
+        sorted_models_with_value = sorted(models_with_value, key=sort_key)
+        return [model for model, _ in sorted_models_with_value]
     except TypeError as error:
         raise ValueError(
             f"Cannot sort by '{sort_by}': values are not mutually comparable"
