@@ -13,7 +13,7 @@ def sites_list(
     ctx: typer.Context,
     sort_by: Annotated[
         str | None,
-        typer.Option(help="Sort results by field name (e.g. vlanId). Case-sensitive."),
+        typer.Option(help="Sort results by field name (e.g. name). Case-sensitive."),
     ] = None,
 ):
 
