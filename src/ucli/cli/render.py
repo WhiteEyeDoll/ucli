@@ -1,4 +1,3 @@
-import json
 from collections.abc import Sequence
 from typing import Any
 
@@ -12,6 +11,8 @@ from ucli.cli.console import console as default_console
 from ucli.cli.types import OutputFormat
 
 RenderData = BaseModel | Sequence[BaseModel]
+SerializedItem = dict[str, Any]
+RenderPayload = SerializedItem | list[SerializedItem]
 
 
 def _coerce_models(data: RenderData) -> tuple[list[BaseModel], bool]:
@@ -26,6 +27,30 @@ def _coerce_models(data: RenderData) -> tuple[list[BaseModel], bool]:
         return list(data), False
 
     raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
+
+
+def _sort_models(models: Sequence[BaseModel], sort_by: str) -> list[BaseModel]:
+    model_type = type(models[0]) if models else None
+    if model_type and sort_by not in model_type.model_fields:
+        raise ValueError(f"Unknown sort field: {sort_by}")
+
+    def key(model: BaseModel):
+        value = getattr(model, sort_by, None)
+        if isinstance(value, str):
+            value = value.casefold()
+        return (value is None, value)  # None values last
+
+    return sorted(models, key=key)
+
+
+def _prepare_payload(data: RenderData, sort_by: str | None = None) -> RenderPayload:
+    models, is_single = _coerce_models(data)
+
+    if sort_by and len(models) > 1:
+        models = _sort_models(models, sort_by)
+
+    items = [model.model_dump(mode="json", exclude_none=True) for model in models]
+    return items[0] if is_single else items
 
 
 def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
@@ -48,26 +73,12 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
     return str(val)
 
 
-def render_json(data: RenderData, console: Console):
-    models, is_single = _coerce_models(data)
-
-    serialized_items = [
-        item.model_dump(mode="json", exclude_none=True) for item in models
-    ]
-
-    payload = serialized_items[0] if is_single else serialized_items
+def render_json(payload: RenderPayload, console: Console):
 
     console.print_json(data=payload)
 
 
-def render_yaml(data: RenderData, console: Console):
-    models, is_single = _coerce_models(data)
-
-    serialized_items = [
-        item.model_dump(mode="json", exclude_none=True) for item in models
-    ]
-
-    payload = serialized_items[0] if is_single else serialized_items
+def render_yaml(payload: RenderPayload, console: Console):
 
     yaml_text = yaml.safe_dump(
         payload,
@@ -78,14 +89,8 @@ def render_yaml(data: RenderData, console: Console):
     console.print(Syntax(code=yaml_text, lexer="yaml", background_color="default"))
 
 
-def render_table(data: RenderData, console: Console, max_depth: int = 3):
-    models, _ = _coerce_models(data)
+def render_table(rows: Sequence[SerializedItem], console: Console):
 
-    if not models:
-        console.print("No results.")
-        return
-
-    rows = [item.model_dump(mode="json", exclude_none=True) for item in models]
     columns = list(dict.fromkeys(key for row in rows for key in row.keys()))
 
     table = Table(show_header=True, header_style="bold magenta", expand=True)
@@ -99,7 +104,7 @@ def render_table(data: RenderData, console: Console, max_depth: int = 3):
                 (
                     ""
                     if col not in item_serialized
-                    else _stringify_nested(item_serialized[col], max_depth=max_depth)
+                    else _stringify_nested(item_serialized[col], max_depth=3)
                 )
                 for col in columns
             )
@@ -111,16 +116,26 @@ def render_table(data: RenderData, console: Console, max_depth: int = 3):
 def render(
     data: RenderData,
     output_format: OutputFormat,
+    sort_by: str | None = None,
     console: Console = default_console,
-    max_depth: int = 3,
 ):
+    models, is_single = _coerce_models(data)
+
+    if sort_by and len(models) > 1:
+        models = _sort_models(models, sort_by)
+
     match output_format:
 
         case "json":
-            render_json(data, console)
+            items = [m.model_dump(mode="json", exclude_none=True) for m in models]
+            payload = items[0] if is_single else items
+            render_json(payload, console)
         case "yaml":
-            render_yaml(data, console)
+            items = [m.model_dump(mode="json", exclude_none=True) for m in models]
+            payload = items[0] if is_single else items
+            render_yaml(payload, console)
         case "table":
-            render_table(data, console, max_depth)
+            rows = [m.model_dump(mode="json", exclude_none=True) for m in models]
+            render_table(rows, console)
         case _:
             raise ValueError(f"Unknown format: {output_format}")

@@ -11,7 +11,7 @@ from pydantic import (
 )
 
 
-class Metadata(BaseModel):
+class MetaData(BaseModel):
     origin: Literal["USER_DEFINED", "SYSTEM_DEFINED", "ORCHESTRATED"]
 
 
@@ -164,7 +164,7 @@ class Network(BaseModel):
     name: str
     enabled: bool
     vlanId: int
-    metadata: Metadata
+    metadata: MetaData
     dhcpGuarding: DhcpGuarding | None = Field(default=None)
     isolationEnabled: bool | None = Field(default=None)
     cellularBackupEnabled: bool | None = Field(default=None)

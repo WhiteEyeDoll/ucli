@@ -12,14 +12,22 @@ app = site_scoped_app()
 
 
 @app.command("list")
-def networks_list(ctx: typer.Context):
+def networks_list(
+    ctx: typer.Context,
+    sort_by: Annotated[
+        str | None,
+        typer.Option(help="Sort results by field name (e.g. vlanId). Case-sensitive."),
+    ] = None,
+):
 
     with APIClientV1(ctx.obj["client_options"]) as client:
         site = client.sites.get(ctx.obj["site_id"])
 
         network_list = site.networks.list()
 
-        render(network_list, output_format=ctx.obj["output_format"])
+        render(
+            data=network_list, sort_by=sort_by, output_format=ctx.obj["output_format"]
+        )
 
 
 @app.command("get")
