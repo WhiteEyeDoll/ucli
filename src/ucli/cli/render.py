@@ -73,7 +73,7 @@ def _prepare_items(
     if sort_by:
         models = _sort_models(models, sort_by)
 
-    items = [m.model_dump(mode="json", exclude_none=True) for m in models]
+    items = [model.model_dump(mode="json", exclude_none=True) for model in models]
 
     return items, is_single
 
