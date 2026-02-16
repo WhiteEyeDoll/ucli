@@ -2,28 +2,28 @@
 
 ## API client
 
-#### Data models
+### Data models
 
 - [x] Sites
 - [x] Networks
 
-#### Endpoints
+### Endpoints
 
-##### Application info
+#### Application info
 
 - [ ] get
 
-##### Unifi devices
+#### Unifi devices
 _TBD_
 
-##### Clients
+#### Clients
 _TBD_
 
-##### Sites
+#### Sites
 - [x] list
 - [x] get
 
-##### Networks
+#### Networks
 - [x] list
 - [x] get
 - [ ] create
@@ -32,28 +32,28 @@ _TBD_
 - [x] get references
 
 
-##### WiFi Broadcasts
+#### WiFi Broadcasts
 _TBD_
 
-##### Hotspot
+#### Hotspot
 _TBD_
 
-##### Firewall
+#### Firewall
 _TBD_
 
-##### Access Control (ACL Rules)
+#### Access Control (ACL Rules)
 _TBD_
 
-##### DNS Policies
+#### DNS Policies
 _TBD_
 
-##### Traffic Matching Lists
+#### Traffic Matching Lists
 _TBD_
 
-##### Supporting Resources
+#### Supporting Resources
 _TBD_
 
-#### Other
+### Other
 
 - [ ] filtering
 - [ ] pagination
@@ -61,11 +61,13 @@ _TBD_
 
 ## CLI
 
-#### `sites` command
+### Commands
+
+#### `sites`
 - [x] list
 - [ ] get
 
-#### `networks` command
+#### `networks`
 - [x] list
 - [x] get
 - [ ] create
@@ -73,20 +75,22 @@ _TBD_
 - [ ] edit (update)
 - [x] get references
 
-#### Output
+### Output
 
 - [x] json
 - [x] yaml
 - [x] table
 
-#### Other
+### Other
 
 - [ ] filtering options
 - [ ] editor based editing for update operations
 
-### TUI
+## TUI
 
 _TBD_
+
+## Tooling
 
 ### Tests
 _TBD_
