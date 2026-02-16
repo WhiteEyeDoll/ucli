@@ -5,6 +5,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel
 from rich.console import Console
+from rich.syntax import Syntax
 from rich.table import Table
 
 from ucli.cli.console import console as default_console
@@ -53,11 +54,10 @@ def render_json(data: RenderData, console: Console):
     serialized_items = [
         item.model_dump(mode="json", exclude_none=True) for item in models
     ]
-    serialized = serialized_items[0] if is_single else serialized_items
 
-    output = json.dumps(serialized)
+    payload = serialized_items[0] if is_single else serialized_items
 
-    console.print_json(output)
+    console.print_json(data=payload)
 
 
 def render_yaml(data: RenderData, console: Console):
@@ -66,15 +66,16 @@ def render_yaml(data: RenderData, console: Console):
     serialized_items = [
         item.model_dump(mode="json", exclude_none=True) for item in models
     ]
-    serialized = serialized_items[0] if is_single else serialized_items
 
-    output = yaml.safe_dump(
-        serialized,
+    payload = serialized_items[0] if is_single else serialized_items
+
+    yaml_text = yaml.safe_dump(
+        payload,
         sort_keys=False,
         default_flow_style=False,
     )
 
-    console.print(output)
+    console.print(Syntax(code=yaml_text, lexer="yaml", background_color="default"))
 
 
 def render_table(data: RenderData, console: Console, max_depth: int = 3):
