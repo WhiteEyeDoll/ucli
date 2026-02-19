@@ -1,16 +1,18 @@
-import json
 from collections.abc import Sequence
 from typing import Any
 
 import yaml
 from pydantic import BaseModel
 from rich.console import Console
+from rich.syntax import Syntax
 from rich.table import Table
 
 from ucli.cli.console import console as default_console
 from ucli.cli.types import OutputFormat
 
+SerializedItem = dict[str, Any]
 RenderData = BaseModel | Sequence[BaseModel]
+RenderPayload = SerializedItem | list[SerializedItem]
 
 
 def _coerce_models(data: RenderData) -> tuple[list[BaseModel], bool]:
@@ -25,6 +27,56 @@ def _coerce_models(data: RenderData) -> tuple[list[BaseModel], bool]:
         return list(data), False
 
     raise TypeError(f"Expected BaseModel or Sequence[BaseModel], got {type(data)}")
+
+
+def _get_nested_value(source: Any, field_path: str) -> Any:
+    value: Any = source
+
+    for field in field_path.split("."):
+        if isinstance(value, BaseModel):
+            if field not in type(value).model_fields:
+                return None
+            value = getattr(value, field, None)
+        elif isinstance(value, dict):
+            value = value.get(field)
+        else:
+            return None
+
+    return value
+
+
+def _sort_models(models: list[BaseModel], sort_by: str) -> list[BaseModel]:
+    models_with_value = [(model, _get_nested_value(model, sort_by)) for model in models]
+    if models_with_value and all(value is None for _, value in models_with_value):
+        raise ValueError(f"Unknown sort field: {sort_by}")
+
+    def sort_key(item: tuple[BaseModel, Any]) -> tuple[bool, Any]:
+        _, value = item
+        if isinstance(value, str):
+            value = value.casefold()
+        return (value is None, value)
+
+    try:
+        sorted_models_with_value = sorted(models_with_value, key=sort_key)
+        return [model for model, _ in sorted_models_with_value]
+    except TypeError as error:
+        raise ValueError(
+            f"Cannot sort by '{sort_by}': values are not mutually comparable"
+        ) from error
+
+
+def _prepare_items(
+    data: RenderData, sort_by: str | None = None
+) -> tuple[list[SerializedItem], bool]:
+
+    models, is_single = _coerce_models(data)
+
+    if sort_by:
+        models = _sort_models(models, sort_by)
+
+    items = [model.model_dump(mode="json", exclude_none=True) for model in models]
+
+    return items, is_single
 
 
 def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
@@ -47,44 +99,28 @@ def _stringify_nested(val: Any, depth: int = 0, max_depth: int = 3) -> str:
     return str(val)
 
 
-def render_json(data: RenderData, console: Console):
-    models, is_single = _coerce_models(data)
+def render_json(payload: RenderPayload, console: Console):
 
-    serialized_items = [
-        item.model_dump(mode="json", exclude_none=True) for item in models
-    ]
-    serialized = serialized_items[0] if is_single else serialized_items
-
-    output = json.dumps(serialized)
-
-    console.print_json(output)
+    console.print_json(data=payload)
 
 
-def render_yaml(data: RenderData, console: Console):
-    models, is_single = _coerce_models(data)
+def render_yaml(payload: RenderPayload, console: Console):
 
-    serialized_items = [
-        item.model_dump(mode="json", exclude_none=True) for item in models
-    ]
-    serialized = serialized_items[0] if is_single else serialized_items
-
-    output = yaml.safe_dump(
-        serialized,
+    yaml_text = yaml.safe_dump(
+        payload,
         sort_keys=False,
         default_flow_style=False,
     )
 
-    console.print(output)
+    console.print(Syntax(code=yaml_text, lexer="yaml", background_color="default"))
 
 
-def render_table(data: RenderData, console: Console, max_depth: int = 3):
-    models, _ = _coerce_models(data)
+def render_table(rows: Sequence[SerializedItem], console: Console, max_depth: int = 3):
 
-    if not models:
+    if not rows:
         console.print("No results.")
         return
 
-    rows = [item.model_dump(mode="json", exclude_none=True) for item in models]
     columns = list(dict.fromkeys(key for row in rows for key in row.keys()))
 
     table = Table(show_header=True, header_style="bold magenta", expand=True)
@@ -110,16 +146,18 @@ def render_table(data: RenderData, console: Console, max_depth: int = 3):
 def render(
     data: RenderData,
     output_format: OutputFormat,
+    sort_by: str | None = None,
     console: Console = default_console,
-    max_depth: int = 3,
 ):
+    items, is_single = _prepare_items(data=data, sort_by=sort_by)
+
     match output_format:
 
         case "json":
-            render_json(data, console)
+            payload = items[0] if is_single else items
+            render_json(payload, console)
         case "yaml":
-            render_yaml(data, console)
+            payload = items[0] if is_single else items
+            render_yaml(payload, console)
         case "table":
-            render_table(data, console, max_depth)
-        case _:
-            raise ValueError(f"Unknown format: {output_format}")
+            render_table(rows=items, console=console, max_depth=3)

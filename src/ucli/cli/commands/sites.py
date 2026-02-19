@@ -1,3 +1,5 @@
+from typing import Annotated
+
 import typer
 
 from ucli.cli.render import render
@@ -7,10 +9,16 @@ app = typer.Typer()
 
 
 @app.command("list")
-def sites_list(ctx: typer.Context):
+def sites_list(
+    ctx: typer.Context,
+    sort_by: Annotated[
+        str | None,
+        typer.Option(help="Sort results by field path (for example: name)"),
+    ] = None,
+):
 
     with APIClientV1(ctx.obj["client_options"]) as client:
 
         site_list = client.sites.list()
 
-        render(site_list, output_format=ctx.obj["output_format"])
+        render(data=site_list, sort_by=sort_by, output_format=ctx.obj["output_format"])
