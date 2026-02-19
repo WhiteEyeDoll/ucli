@@ -10,8 +10,8 @@ from rich.table import Table
 from ucli.cli.console import console as default_console
 from ucli.cli.types import OutputFormat
 
-RenderData = BaseModel | Sequence[BaseModel]
 SerializedItem = dict[str, Any]
+RenderData = BaseModel | Sequence[BaseModel]
 RenderPayload = SerializedItem | list[SerializedItem]
 
 

@@ -17,7 +17,7 @@ def networks_list(
     sort_by: Annotated[
         str | None,
         typer.Option(
-            help="Sort results by field path (for example: vlanId or origin.metadata)."
+            help="Sort results by field path (for example: vlanId or metadata.origin)."
         ),
     ] = None,
 ):
