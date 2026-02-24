@@ -19,7 +19,7 @@ class DhcpGuarding(BaseModel):
     trustedDhcpServerIpAddresses: list[IPvAnyAddress]
 
     # Bug in Unifi Network API.
-    # Sometimes empty strings are returned in addtion to IP addresses.
+    # Sometimes empty strings are returned in addition to IP addresses.
     # Remove empty strings before validating given values.
 
     @field_validator("trustedDhcpServerIpAddresses", mode="before")
