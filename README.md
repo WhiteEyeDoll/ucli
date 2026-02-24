@@ -1,3 +1,3 @@
 # UCLI
 
-Python CLI for Unifi Network API.
+Python client/cli for Unifi Network API.

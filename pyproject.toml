@@ -1,7 +1,7 @@
 [project]
 name = "ucli"
 version = "0.1.0"
-description = "The ugly unifi network api python cli"
+description = "Python client/cli for Unifi Network API"
 authors = [
     {name = "Pauli Huttunen", email = "pauli.k.huttunen@gmail.com"}
 ]
