@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from pydantic import TypeAdapter
 from ucli.client.models.network import (
     Network,
-    NetworkCreate,
     NetworkReferenceResource,
-    NetworkUpdate,
+    NetworkWrite,
 )
 
 if TYPE_CHECKING:
     from ucli.client.client import APIClientV1
+
+
+network_adapter = TypeAdapter(Network)
 
 
 class NetworksResource:
@@ -29,7 +33,7 @@ class NetworksResource:
         if not isinstance(data, list):
             raise TypeError(f"Expected list data for networks, got {type(data)}")
 
-        network_list = [Network.model_validate(item) for item in data]
+        network_list = [network_adapter.validate_python(item) for item in data]
 
         return network_list
 
@@ -38,35 +42,39 @@ class NetworksResource:
             "GET", f"/sites/{self.site_id}/networks/{network_id}"
         )
 
-        network = Network.model_validate(response)
+        network = network_adapter.validate_python(response)
 
         return network
 
-    def create(self, network_configuration: NetworkCreate) -> Network:
+    def create(self, network_configuration: NetworkWrite) -> Network:
 
-        json_data = network_configuration.model_dump(mode="json")
+        json_data = network_configuration.model_dump(mode="json", exclude_none=True)
+        request_body = json.dumps(json_data)
 
         response = self.client.request(
             "POST",
             f"/sites/{self.site_id}/networks",
-            json=json_data,
+            content=request_body,
+            headers={"Content-Type": "application/json"},
         )
 
-        network = Network.model_validate(response)
+        network = network_adapter.validate_python(response)
 
         return network
 
-    def update(self, network_id: UUID, network_configuration: NetworkUpdate) -> Network:
+    def update(self, network_id: UUID, network_configuration: NetworkWrite) -> Network:
 
-        json_data = network_configuration.model_dump(mode="json")
+        json_data = network_configuration.model_dump(mode="json", exclude_none=True)
+        request_body = json.dumps(json_data)
 
         response = self.client.request(
             "PUT",
             f"/sites/{self.site_id}/networks/{network_id}",
-            json=json_data,
+            content=request_body,
+            headers={"Content-Type": "application/json"},
         )
 
-        network = Network.model_validate(response)
+        network = network_adapter.validate_python(response)
 
         return network
 
