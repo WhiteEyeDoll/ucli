@@ -38,7 +38,8 @@ class DhcpGuarding(BaseModel):
 
     # Problematic behaviour in Unifi Network API.
     # Sometimes empty strings are returned in addition to IP addresses.
-    # According to Unifi support these are meant as placeholders if there is less than three (3) defined addresses.
+    # According to Unifi support these are meant as placeholders if
+    # there is less than three (3) defined addresses.
     # Remove empty strings before validating given values.
 
     @field_validator("trustedDhcpServerIpAddresses", mode="before")
@@ -187,13 +188,28 @@ class Ipv6ClientAddressAssignment(BaseModel):
     slaacEnabled: bool
 
 
-class Ipv6Configuration(BaseModel):
-    interfaceType: Literal["PREFIX_DELEGATION", "STATIC"]
+class Ipv6ConfigurationBase(BaseModel):
     clientAddressAssignment: Ipv6ClientAddressAssignment
     routerAdvertisement: RouterAdvertisement | None = Field(default=None)
     dnsServerIpAddressOverride: list[IPvAnyAddress] | None = Field(default=None)
     additionalHostIpSubnets: list[IPvAnyNetwork] | None = Field(default=None)
-    prefixDelegationWanInterfaceId: UUID | None = Field(default=None)
+
+
+class Ipv6PrefixDelegationConfiguration(Ipv6ConfigurationBase):
+    interfaceType: Literal["PREFIX_DELEGATION"]
+    prefixDelegationWanInterfaceId: UUID
+
+
+class Ipv6StaticConfiguration(Ipv6ConfigurationBase):
+    interfaceType: Literal["STATIC"]
+    hostIpAddress: IPvAnyAddress
+    prefixLength: int
+
+
+Ipv6Configuration = Annotated[
+    Ipv6PrefixDelegationConfiguration | Ipv6StaticConfiguration,
+    Field(discriminator="interfaceType"),
+]
 
 
 class NetworkReferenceResourceDetail(BaseModel):

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 from uuid import UUID
 
 import typer
@@ -7,10 +7,8 @@ from pydantic import BaseModel
 
 from ucli.cli.console import console
 from ucli.cli.model_input import (
-    edit_payload_in_editor,
-    load_payload_from_file,
-    merge_payload,
-    resolve_model_input,
+    resolve_create_model_input,
+    resolve_update_model_input,
     validate_model_payload,
 )
 from ucli.cli.render import render
@@ -59,14 +57,6 @@ def networks_get(
 @app.command("create")
 def networks_create(
     ctx: typer.Context,
-    interactive: Annotated[
-        bool,
-        typer.Option(
-            "--interactive",
-            "-i",
-            help="Create network by entering values interactively.",
-        ),
-    ] = False,
     configuration_file: Annotated[
         Path | None,
         typer.Option(
@@ -79,14 +69,13 @@ def networks_create(
             resolve_path=True,
             help=(
                 "Path to network configuration file (JSON or YAML). "
-                "In interactive mode, this is used as the base payload."
+                "When used, create runs in file mode."
             ),
         ),
     ] = None,
 ):
-    network_configuration = resolve_model_input(
+    network_configuration = resolve_create_model_input(
         NetworkWrite,
-        interactive=interactive,
         configuration_file=configuration_file,
     )
 
@@ -123,34 +112,30 @@ def networks_edit(
         typer.Option(
             "--editor",
             "-e",
-            help="Open the current network payload in the editor and update from it.",
+            help="Force editor mode.",
         ),
     ] = False,
 ):
     with APIClientV1(ctx.obj["client_options"]) as client:
         site = client.sites.get(ctx.obj["site_id"])
 
-        if editor_mode:
+        use_editor = editor_mode or configuration_file is None
+        base_payload: dict[str, Any] | None = None
+        if use_editor:
             current_network = site.networks.get(network_id)
             current_write_model = validate_model_payload(
                 NetworkWrite,
                 current_network.model_dump(mode="json"),
             )
-            current_payload = cast(BaseModel, current_write_model).model_dump(
+            base_payload = cast(BaseModel, current_write_model).model_dump(
                 mode="json", exclude_none=True
             )
-
-            if configuration_file is not None:
-                patch_payload = load_payload_from_file(configuration_file)
-                current_payload = merge_payload(current_payload, patch_payload)
-
-            payload = edit_payload_in_editor(current_payload)
-        else:
-            if configuration_file is None:
-                raise typer.BadParameter("Provide --editor or --file.")
-            payload = load_payload_from_file(configuration_file)
-
-        network_configuration = validate_model_payload(NetworkWrite, payload)
+        network_configuration = resolve_update_model_input(
+            NetworkWrite,
+            editor_mode=use_editor,
+            configuration_file=configuration_file,
+            base_payload=base_payload,
+        )
         network = site.networks.update(network_id, network_configuration)
 
         render(network, output_format=ctx.obj["output_format"])

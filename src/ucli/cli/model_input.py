@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from dataclasses import dataclass
 from pathlib import Path
 from types import NoneType, UnionType
 from typing import Annotated, Any, Literal, Union, get_args, get_origin
@@ -11,6 +12,15 @@ from pydantic import TypeAdapter
 from pydantic_core import PydanticUndefined
 
 _MISSING = object()
+
+
+@dataclass(frozen=True)
+class _PromptFieldState:
+    field_name: str
+    default_value: Any
+    is_optional: bool
+    resolved_annotation: Any
+    prompt_label: str
 
 
 def load_payload_from_file(configuration_file: Path) -> dict[str, Any]:
@@ -149,9 +159,7 @@ def _should_prompt_field(field_info: Any, payload: dict[str, Any]) -> bool:
             raise typer.BadParameter("prompt_if.in must be a list.")
         return current_value in allowed_values
 
-    raise typer.BadParameter(
-        "prompt_if requires one of: equals, not_equals, in."
-    )
+    raise typer.BadParameter("prompt_if requires one of: equals, not_equals, in.")
 
 
 def _is_list_annotation(annotation: Any) -> bool:
@@ -162,28 +170,33 @@ def _is_union_origin(origin: Any) -> bool:
     return origin in (Union, UnionType)
 
 
-def _extract_discriminated_union_schema(
+def _extract_discriminated_union_schema(  # pylint: disable=too-many-branches
     annotation: Any,
+    *,
+    discriminator: str | None = None,
 ) -> tuple[str, dict[str, type[BaseModel]]] | None:
-    if get_origin(annotation) is not Annotated:
-        return None
+    union_annotation = annotation
+    resolved_discriminator = discriminator
 
-    args = get_args(annotation)
-    if len(args) < 2:
-        return None
+    if get_origin(annotation) is Annotated:
+        args = get_args(annotation)
+        if len(args) < 2:
+            return None
 
-    union_annotation = args[0]
+        union_annotation = args[0]
+        if resolved_discriminator is None:
+            for metadata in args[1:]:
+                candidate = getattr(metadata, "discriminator", None)
+                if isinstance(candidate, str) and candidate.strip():
+                    resolved_discriminator = candidate
+                    break
+
     union_origin = get_origin(union_annotation)
     if not _is_union_origin(union_origin):
         return None
 
-    discriminator: str | None = None
-    for metadata in args[1:]:
-        candidate = getattr(metadata, "discriminator", None)
-        if isinstance(candidate, str) and candidate.strip():
-            discriminator = candidate
-            break
-    if discriminator is None:
+    if not isinstance(resolved_discriminator, str) or not resolved_discriminator.strip(
+    ):
         return None
 
     choice_to_model: dict[str, type[BaseModel]] = {}
@@ -193,16 +206,17 @@ def _extract_discriminated_union_schema(
                 "Discriminated union interactive prompting only supports "
                 "BaseModel variants."
             )
-        field_info = variant.model_fields.get(discriminator)
+        field_info = variant.model_fields.get(resolved_discriminator)
         if field_info is None:
             raise typer.BadParameter(
-                f"Missing discriminator field '{discriminator}' in {variant.__name__}."
+                f"Missing discriminator field '{resolved_discriminator}' in "
+                f"{variant.__name__}."
             )
         discriminator_annotation = field_info.annotation
         if get_origin(discriminator_annotation) is not Literal:
             raise typer.BadParameter(
-                f"Discriminator field '{discriminator}' in {variant.__name__} "
-                "must use Literal values."
+                f"Discriminator field '{resolved_discriminator}' in "
+                f"{variant.__name__} must use Literal values."
             )
         for literal_value in get_args(discriminator_annotation):
             if not isinstance(literal_value, str):
@@ -212,7 +226,7 @@ def _extract_discriminated_union_schema(
                 )
             choice_to_model[literal_value] = variant
 
-    return discriminator, choice_to_model
+    return resolved_discriminator, choice_to_model
 
 
 def _field_prompt_label(field_name: str, is_optional: bool) -> str:
@@ -283,6 +297,24 @@ def _coerce_list_item(field_name: str, item_annotation: Any, raw_value: str) -> 
             ) from error
 
     return raw_value
+
+
+def _build_prompt_field_state(
+    field_name: str, annotation: Any, default_value: Any = _MISSING
+) -> _PromptFieldState:
+    is_optional = _is_optional_annotation(annotation)
+    resolved_annotation = _unwrap_optional_annotation(annotation)
+    return _PromptFieldState(
+        field_name=field_name,
+        default_value=default_value,
+        is_optional=is_optional,
+        resolved_annotation=resolved_annotation,
+        prompt_label=_field_prompt_label(field_name, is_optional),
+    )
+
+
+def _is_optional_without_default(field_state: _PromptFieldState) -> bool:
+    return field_state.is_optional and field_state.default_value in (_MISSING, None)
 
 
 # pylint: disable=too-many-locals,too-many-branches
@@ -388,15 +420,14 @@ def _prompt_literal_field(
         and isinstance(default_value, str)
         and default_value.casefold() in canonical
     )
+    default_choice = canonical[default_value.casefold()] if has_default else None
     while True:
         if allow_none and default_value in (_MISSING, None):
             selected = typer.prompt(prompt_text, default="", show_default=False).strip()
             if selected == "":
                 return None
         elif has_default:
-            selected = typer.prompt(
-                prompt_text, default=canonical[default_value.casefold()]
-            )
+            selected = typer.prompt(prompt_text, default=default_choice)
         else:
             selected = typer.prompt(prompt_text)
 
@@ -440,128 +471,175 @@ def _prompt_discriminator_value(
         )
 
 
-def _prompt_required_field(  # pylint: disable=too-many-branches,too-many-statements,too-many-return-statements
-    field_name: str, annotation: Any, default_value: Any = _MISSING
+def _prompt_schema_field(
+    field_state: _PromptFieldState,
+    *,
+    discriminator: str | None = None,
 ) -> Any:
-    is_optional = _is_optional_annotation(annotation)
-    resolved_annotation = _unwrap_optional_annotation(annotation)
-    prompt_label = _field_prompt_label(field_name, is_optional)
+    if _is_optional_without_default(field_state):
+        configure_field = typer.confirm(
+            f"Configure {field_state.prompt_label}?", default=False
+        )
+        if not configure_field:
+            return None
 
-    prompt_value: Any
-    if get_origin(resolved_annotation) is Literal:
-        prompt_value = _prompt_literal_field(
-            field_name,
-            prompt_label,
-            resolved_annotation,
-            default_value=default_value,
-            allow_none=is_optional,
-        )
-    elif _extract_discriminated_union_schema(resolved_annotation) is not None:
-        if is_optional and default_value in (_MISSING, None):
-            configure_field = typer.confirm(f"Configure {prompt_label}?", default=False)
-            if not configure_field:
-                return None
-        typer.echo(f"\n[{prompt_label}]")
-        section_default_payload = _coerce_section_default_payload(default_value)
-        prompt_value = _prompt_payload_for_schema(
-            resolved_annotation, section_default_payload
-        )
-    elif _is_model_annotation(resolved_annotation):
-        if is_optional and default_value in (_MISSING, None):
-            configure_field = typer.confirm(f"Configure {prompt_label}?", default=False)
-            if not configure_field:
-                return None
-        typer.echo(f"\n[{prompt_label}]")
-        section_default_payload = _coerce_section_default_payload(default_value)
-        prompt_value = _prompt_payload_for_model(
-            resolved_annotation, section_default_payload
-        )
-    elif resolved_annotation is bool:
-        if is_optional and default_value in (_MISSING, None):
-            set_field = typer.confirm(f"Set {prompt_label}?", default=False)
-            if not set_field:
-                return None
-            prompt_value = typer.confirm(prompt_label, default=False)
-        else:
-            prompt_default = default_value if isinstance(default_value, bool) else True
-            prompt_value = typer.confirm(prompt_label, default=prompt_default)
-    elif resolved_annotation in (str, int, float):
-        if resolved_annotation is str:
-            if is_optional and default_value in (_MISSING, None):
-                raw_string = typer.prompt(
-                    prompt_label,
-                    default="",
-                    show_default=False,
-                ).strip()
-                if raw_string == "":
-                    return None
-                prompt_value = raw_string
-            elif default_value is _MISSING:
-                while True:
-                    raw_string = typer.prompt(
-                        prompt_label,
-                        default="",
-                        show_default=False,
-                    ).strip()
-                    if raw_string != "":
-                        prompt_value = raw_string
-                        break
-                    typer.echo(f"{field_name} is required.")
-            else:
-                prompt_value = typer.prompt(
-                    prompt_label, type=resolved_annotation, default=default_value
-                )
-        elif is_optional and default_value in (_MISSING, None):
-            raw_scalar_value = typer.prompt(
-                prompt_label,
+    typer.echo(f"\n[{field_state.prompt_label}]")
+    section_default_payload = _coerce_section_default_payload(field_state.default_value)
+    return _prompt_payload_for_schema(
+        field_state.resolved_annotation,
+        section_default_payload,
+        discriminator=discriminator,
+    )
+
+
+def _prompt_bool_field(field_state: _PromptFieldState) -> bool | None:
+    if _is_optional_without_default(field_state):
+        set_field = typer.confirm(f"Set {field_state.prompt_label}?", default=False)
+        if not set_field:
+            return None
+        return typer.confirm(field_state.prompt_label, default=False)
+
+    prompt_default = (
+        field_state.default_value
+        if isinstance(field_state.default_value, bool)
+        else True
+    )
+    return typer.confirm(field_state.prompt_label, default=prompt_default)
+
+
+def _prompt_string_field(field_state: _PromptFieldState) -> str | None:
+    if _is_optional_without_default(field_state):
+        raw_string = typer.prompt(
+            field_state.prompt_label,
+            default="",
+            show_default=False,
+        ).strip()
+        if raw_string == "":
+            return None
+        return raw_string
+
+    if field_state.default_value is _MISSING:
+        while True:
+            raw_string = typer.prompt(
+                field_state.prompt_label,
                 default="",
                 show_default=False,
             ).strip()
-            if raw_scalar_value == "":
-                return None
-            try:
-                prompt_value = resolved_annotation(raw_scalar_value)
-            except (TypeError, ValueError) as error:
-                raise typer.BadParameter(
-                    f"Invalid value for '{field_name}': {raw_scalar_value!r}."
-                ) from error
-        elif default_value is _MISSING:
-            prompt_value = typer.prompt(prompt_label, type=resolved_annotation)
-        else:
-            prompt_value = typer.prompt(
-                prompt_label, type=resolved_annotation, default=default_value
-            )
-    elif _is_list_annotation(resolved_annotation):
-        prompt_value = _prompt_list_field(
-            field_name,
-            prompt_label,
-            resolved_annotation,
-            default_value=default_value,
-            allow_none=is_optional,
-            required=not is_optional,
-        )
-    elif get_origin(resolved_annotation) in (dict, tuple, set):
-        raise typer.BadParameter(
-            f"Unsupported interactive field type for '{field_name}'. Use --file."
-        )
-    elif is_optional and default_value in (_MISSING, None):
+            if raw_string != "":
+                return raw_string
+            typer.echo(f"{field_state.field_name} is required.")
+
+    return typer.prompt(
+        field_state.prompt_label, type=str, default=field_state.default_value
+    )
+
+
+def _prompt_numeric_field(
+    field_state: _PromptFieldState, value_type: type[int] | type[float]
+) -> int | float | None:
+    if _is_optional_without_default(field_state):
+        raw_scalar_value = typer.prompt(
+            field_state.prompt_label,
+            default="",
+            show_default=False,
+        ).strip()
+        if raw_scalar_value == "":
+            return None
+        try:
+            return value_type(raw_scalar_value)
+        except (TypeError, ValueError) as error:
+            raise typer.BadParameter(
+                f"Invalid value for '{field_state.field_name}': {raw_scalar_value!r}."
+            ) from error
+
+    if field_state.default_value is _MISSING:
+        return typer.prompt(field_state.prompt_label, type=value_type)
+
+    return typer.prompt(
+        field_state.prompt_label, type=value_type, default=field_state.default_value
+    )
+
+
+def _prompt_generic_text_field(field_state: _PromptFieldState) -> str | None:
+    if _is_optional_without_default(field_state):
         prompt_value = typer.prompt(
-            prompt_label, default="", show_default=False
+            field_state.prompt_label, default="", show_default=False
         ).strip()
         if prompt_value == "":
             return None
-    elif default_value is _MISSING:
+        return prompt_value
+
+    if field_state.default_value is _MISSING:
         while True:
             prompt_value = typer.prompt(
-                prompt_label, default="", show_default=False
+                field_state.prompt_label, default="", show_default=False
             ).strip()
             if prompt_value != "":
-                break
-            typer.echo(f"{field_name} is required.")
-    else:
-        prompt_value = typer.prompt(prompt_label, default=str(default_value))
+                return prompt_value
+            typer.echo(f"{field_state.field_name} is required.")
 
-    return prompt_value
+    return typer.prompt(
+        field_state.prompt_label, default=str(field_state.default_value)
+    )
+
+
+def _prompt_required_field(  # pylint: disable=too-many-return-statements
+    field_name: str,
+    annotation: Any,
+    default_value: Any = _MISSING,
+    *,
+    field_discriminator: str | None = None,
+) -> Any:
+    field_state = _build_prompt_field_state(field_name, annotation, default_value)
+    resolved_annotation = field_state.resolved_annotation
+    discriminated_union = _extract_discriminated_union_schema(
+        resolved_annotation,
+        discriminator=field_discriminator,
+    )
+
+    if get_origin(resolved_annotation) is Literal:
+        return _prompt_literal_field(
+            field_name,
+            field_state.prompt_label,
+            resolved_annotation,
+            default_value=field_state.default_value,
+            allow_none=field_state.is_optional,
+        )
+
+    if discriminated_union is not None:
+        return _prompt_schema_field(
+            field_state,
+            discriminator=field_discriminator,
+        )
+
+    if _is_model_annotation(resolved_annotation):
+        return _prompt_schema_field(field_state)
+
+    if resolved_annotation is bool:
+        return _prompt_bool_field(field_state)
+
+    if resolved_annotation is str:
+        return _prompt_string_field(field_state)
+
+    if resolved_annotation in (int, float):
+        return _prompt_numeric_field(field_state, resolved_annotation)
+
+    if _is_list_annotation(resolved_annotation):
+        return _prompt_list_field(
+            field_name,
+            field_state.prompt_label,
+            resolved_annotation,
+            default_value=field_state.default_value,
+            allow_none=field_state.is_optional,
+            required=not field_state.is_optional,
+        )
+
+    if get_origin(resolved_annotation) in (dict, tuple, set):
+        raise typer.BadParameter(
+            f"Unsupported interactive field type for '{field_name}'. Use --file."
+        )
+
+    return _prompt_generic_text_field(field_state)
 
 
 def _prompt_payload_for_model(
@@ -586,19 +664,32 @@ def _prompt_payload_for_model(
                 default_value = model_default
 
         payload[field_name] = _prompt_required_field(
-            field_name, field_info.annotation, default_value=default_value
+            field_name,
+            field_info.annotation,
+            default_value=default_value,
+            field_discriminator=(
+                field_info.discriminator
+                if isinstance(field_info.discriminator, str)
+                else None
+            ),
         )
 
     return payload
 
 
 def _prompt_payload_for_schema(
-    schema: Any, base_payload: dict[str, Any] | None = None
+    schema: Any,
+    base_payload: dict[str, Any] | None = None,
+    *,
+    discriminator: str | None = None,
 ) -> dict[str, Any]:
     if _is_model_annotation(schema):
         return _prompt_payload_for_model(schema, base_payload)
 
-    discriminated_union = _extract_discriminated_union_schema(schema)
+    discriminated_union = _extract_discriminated_union_schema(
+        schema,
+        discriminator=discriminator,
+    )
     if discriminated_union is None:
         raise typer.BadParameter(
             "Interactive mode supports BaseModel or discriminated union schemas."
@@ -620,22 +711,60 @@ def _prompt_payload_for_schema(
     )
 
 
-def resolve_model_input(
+def resolve_create_payload(
     model: Any,
     *,
-    interactive: bool,
+    configuration_file: Path | None,
+) -> dict[str, Any]:
+    if configuration_file is None:
+        return _prompt_payload_for_schema(model, {})
+    return load_payload_from_file(configuration_file)
+
+
+def resolve_update_payload(
+    *,
+    editor_mode: bool,
+    configuration_file: Path | None,
+    base_payload: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    if editor_mode:
+        if base_payload is None:
+            raise typer.BadParameter("Editor mode requires base payload.")
+
+        payload = dict(base_payload)
+        if configuration_file is not None:
+            patch_payload = load_payload_from_file(configuration_file)
+            payload = merge_payload(payload, patch_payload)
+        return edit_payload_in_editor(payload)
+
+    if configuration_file is None:
+        raise typer.BadParameter("Provide --editor or --file.")
+
+    return load_payload_from_file(configuration_file)
+
+
+def resolve_create_model_input(
+    model: Any,
+    *,
     configuration_file: Path | None,
 ) -> Any:
-    if interactive:
-        payload = (
-            load_payload_from_file(configuration_file)
-            if configuration_file is not None
-            else {}
-        )
-        payload = _prompt_payload_for_schema(model, payload)
-    else:
-        if configuration_file is None:
-            raise typer.BadParameter("Provide --interactive or --file.")
-        payload = load_payload_from_file(configuration_file)
+    payload = resolve_create_payload(
+        model,
+        configuration_file=configuration_file,
+    )
+    return validate_model_payload(model, payload)
 
+
+def resolve_update_model_input(
+    model: Any,
+    *,
+    editor_mode: bool,
+    configuration_file: Path | None,
+    base_payload: dict[str, Any] | None = None,
+) -> Any:
+    payload = resolve_update_payload(
+        editor_mode=editor_mode,
+        configuration_file=configuration_file,
+        base_payload=base_payload,
+    )
     return validate_model_payload(model, payload)
