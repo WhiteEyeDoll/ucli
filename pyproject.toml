@@ -40,9 +40,7 @@ disable = [
 typeCheckingMode = "standard"
 include = ["src"]
 exclude = [
-    "**/.*",
     "**/__pycache__",
-    ".venv",
     "**/node_modules"
 ]
 reportMissingImports = "error"
