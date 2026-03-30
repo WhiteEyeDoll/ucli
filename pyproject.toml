@@ -1,7 +1,7 @@
 [project]
 name = "ucli"
 version = "0.1.0"
-description = "The ugly unifi network api python cli"
+description = "Python client/cli for Unifi Network API"
 authors = [
     {name = "Pauli Huttunen", email = "pauli.k.huttunen@gmail.com"}
 ]
@@ -39,10 +39,17 @@ disable = [
 [tool.pyright]
 typeCheckingMode = "standard"
 include = ["src"]
-exclude = ["**/__pycache__"]
-
+exclude = [
+    "**/.*",
+    "**/__pycache__",
+    ".venv",
+    "**/node_modules"
+]
 reportMissingImports = "error"
 reportMissingTypeStubs = false
+
+[tool.codespell]
+skip = ".git,__pycache__,.venv,build,dist,uv.lock"
 
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
@@ -51,8 +58,8 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "black>=26.1.0",
+    "codespell>=2.4.1",
     "isort>=7.0.0",
     "pylint>=4.0.4",
     "pyright>=1.1.408",
 ]
-

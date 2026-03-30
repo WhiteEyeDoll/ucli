@@ -1,3 +1,4 @@
+import json
 from functools import cache
 from types import TracebackType
 from typing import Optional, Self, Type
@@ -28,7 +29,30 @@ class APIClientV1:
     def request(self, method: str, path: str, **kwargs):
 
         response = self._client.request(method, path, **kwargs)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as error:
+            response_detail = self._format_response_detail(response)
+            request_payload_label = "request_json"
+            request_payload = kwargs.get("json")
+            if request_payload is None and "content" in kwargs:
+                request_payload_label = "request_content"
+                request_payload = kwargs.get("content")
+            if request_payload is None and "data" in kwargs:
+                request_payload_label = "request_data"
+                request_payload = kwargs.get("data")
+
+            request_detail = self._format_request_detail(request_payload)
+            request_detail_suffix = (
+                f" {request_payload_label}={request_detail!r}" if request_detail else ""
+            )
+            raise httpx.HTTPStatusError(
+                "HTTP request failed: "
+                f"status={response.status_code} method={method} path={path} "
+                f"response={response_detail!r}{request_detail_suffix}",
+                request=error.request,
+                response=error.response,
+            ) from error
 
         # 204 No Content is always empty by definition
         if response.status_code == 204:
@@ -52,6 +76,34 @@ class APIClientV1:
                 ) from error
 
         return {}
+
+    @staticmethod
+    def _format_response_detail(response: httpx.Response) -> str:
+        if not response.content:
+            return "<empty>"
+
+        content_type = response.headers.get("Content-Type", "")
+        if "application/json" in content_type:
+            try:
+                serialized_payload = json.dumps(response.json(), ensure_ascii=False)
+                return serialized_payload[:2000]
+            except ValueError:
+                pass
+
+        body = response.text.strip()
+        return body[:2000] if body else "<empty>"
+
+    @staticmethod
+    def _format_request_detail(payload: object) -> str:
+        if payload is None:
+            return ""
+
+        try:
+            serialized_payload = json.dumps(payload, ensure_ascii=False)
+        except (TypeError, ValueError):
+            serialized_payload = repr(payload)
+
+        return serialized_payload[:2000]
 
     def close(self) -> None:
         self._client.close()

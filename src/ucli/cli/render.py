@@ -13,6 +13,7 @@ from ucli.cli.types import OutputFormat
 SerializedItem = dict[str, Any]
 RenderData = BaseModel | Sequence[BaseModel]
 RenderPayload = SerializedItem | list[SerializedItem]
+_MISSING = object()
 
 
 def _coerce_models(data: RenderData) -> tuple[list[BaseModel], bool]:
@@ -35,26 +36,32 @@ def _get_nested_value(source: Any, field_path: str) -> Any:
     for field in field_path.split("."):
         if isinstance(value, BaseModel):
             if field not in type(value).model_fields:
-                return None
-            value = getattr(value, field, None)
+                return _MISSING
+            value = getattr(value, field, _MISSING)
+            if value is _MISSING:
+                return _MISSING
         elif isinstance(value, dict):
-            value = value.get(field)
+            if field not in value:
+                return _MISSING
+            value = value[field]
         else:
-            return None
+            return _MISSING
 
     return value
 
 
 def _sort_models(models: list[BaseModel], sort_by: str) -> list[BaseModel]:
     models_with_value = [(model, _get_nested_value(model, sort_by)) for model in models]
-    if models_with_value and all(value is None for _, value in models_with_value):
+    if models_with_value and all(value is _MISSING for _, value in models_with_value):
         raise ValueError(f"Unknown sort field: {sort_by}")
 
     def sort_key(item: tuple[BaseModel, Any]) -> tuple[bool, Any]:
         _, value = item
+        if value is _MISSING or value is None:
+            return (True, None)
         if isinstance(value, str):
             value = value.casefold()
-        return (value is None, value)
+        return (False, value)
 
     try:
         sorted_models_with_value = sorted(models_with_value, key=sort_key)
